@@ -22,8 +22,8 @@
       </a>
 
       <nav class="nav-links" aria-label="Primary navigation">
-        <a href="#capabilities">Capabilities</a>
         <a href="#studio">Browser Studio</a>
+        <a href="#capabilities">Capabilities</a>
         <a href="#examples">Examples</a>
         <a href="#runtimes">CLI &amp; Cloud</a>
       </nav>
@@ -98,71 +98,6 @@
           <button class="term-tab" type="button" data-term="clip">lulc clip</button>
         </div>
         <pre class="terminal-body" id="termOutput"></pre>
-      </div>
-    </div>
-  </section>
-
-  <section class="stack-strip" aria-label="Built on open-source geospatial standards">
-    <div class="container stack-inner">
-      <span class="stack-label">Built on Open-Source GIS &amp; ML</span>
-      <div class="stack-items">
-        <span class="stack-chip">Rasterio / GDAL</span>
-        <span class="stack-chip">PyProj (WGS84 Geodesic)</span>
-        <span class="stack-chip">Shapely</span>
-        <span class="stack-chip">PyTorch + SegFormer</span>
-        <span class="stack-chip">Dynamic World</span>
-        <span class="stack-chip">MapLibre GL JS</span>
-        <span class="stack-chip">GeoTIFF.js</span>
-      </div>
-    </div>
-  </section>
-
-  <section id="capabilities" class="section">
-    <div class="container">
-      <div class="section-header">
-        <div>
-          <span class="eyebrow">Capabilities</span>
-          <h2>One Toolkit from Raw Raster to Publication Atlas</h2>
-          <p class="section-sub">Engineered with O(1)-RAM windowed streaming and strict sensor fingerprinting so multi-gigabyte satellite scenes run reliably on laptops and cloud CPUs alike.</p>
-        </div>
-      </div>
-
-      <div class="cap-grid">
-        <article class="cap-card">
-          <div class="cap-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          </div>
-          <h3>Sensor Fingerprinting</h3>
-          <p>Extracts CRS/WKT, GSD in meters, WGS84 bounds, COG overviews, GDAL tags, and decimated band percentiles in milliseconds.</p>
-          <code class="cap-cmd">lulc inspect scene.tif</code>
-        </article>
-
-        <article class="cap-card">
-          <div class="cap-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-          </div>
-          <h3>ML &amp; Categorical Styling</h3>
-          <p>Auto-routes Sentinel-2 (<code>s2-dw</code>), high-res RGB (<code>rgb-oem</code>, <code>rgb-fast</code>), or zero-ML pre-classified maps (<code>categorical</code>).</p>
-          <code class="cap-cmd">lulc map --model auto</code>
-        </article>
-
-        <article class="cap-card">
-          <div class="cap-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-          </div>
-          <h3>Bands &amp; Spectral Indices</h3>
-          <p>Render true/false-color NIR, agriculture, or custom 3-band RGB composites, and stream-compute <code>NDVI</code>, <code>NDWI</code>, <code>NDBI</code>, <code>SAVI</code>, and <code>EVI</code>.</p>
-          <code class="cap-cmd">lulc bands --index ndvi</code>
-        </article>
-
-        <article class="cap-card">
-          <div class="cap-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-          </div>
-          <h3>Print &amp; Web Cartography</h3>
-          <p>Full-page A4/A5/A3/Letter print sheets at 300 DPI with X/Y axes, 5 vector north arrows, ArcGIS scale bars, plus self-contained MapLibre HTML.</p>
-          <code class="cap-cmd">lulc map --page-size a4 --html</code>
-        </article>
       </div>
     </div>
   </section>
@@ -354,7 +289,57 @@
     </div>
   </section>
 
-  <section id="examples" class="section">
+  <section id="capabilities" class="section">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <span class="eyebrow">Capabilities</span>
+          <h2>One Toolkit from Raw Raster to Publication Atlas</h2>
+          <p class="section-sub">Engineered with O(1)-RAM windowed streaming and strict sensor fingerprinting so multi-gigabyte satellite scenes run reliably on laptops and cloud CPUs alike.</p>
+        </div>
+      </div>
+
+      <div class="cap-grid">
+        <article class="cap-card">
+          <div class="cap-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </div>
+          <h3>Sensor Fingerprinting</h3>
+          <p>Extracts CRS/WKT, GSD in meters, WGS84 bounds, COG overviews, GDAL tags, and decimated band percentiles in milliseconds.</p>
+          <code class="cap-cmd">lulc inspect scene.tif</code>
+        </article>
+
+        <article class="cap-card">
+          <div class="cap-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          </div>
+          <h3>ML &amp; Categorical Styling</h3>
+          <p>Auto-routes Sentinel-2 (<code>s2-dw</code>), high-res RGB (<code>rgb-oem</code>, <code>rgb-fast</code>), or zero-ML pre-classified maps (<code>categorical</code>).</p>
+          <code class="cap-cmd">lulc map --model auto</code>
+        </article>
+
+        <article class="cap-card">
+          <div class="cap-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+          </div>
+          <h3>Bands &amp; Spectral Indices</h3>
+          <p>Render true/false-color NIR, agriculture, or custom 3-band RGB composites, and stream-compute <code>NDVI</code>, <code>NDWI</code>, <code>NDBI</code>, <code>SAVI</code>, and <code>EVI</code>.</p>
+          <code class="cap-cmd">lulc bands --index ndvi</code>
+        </article>
+
+        <article class="cap-card">
+          <div class="cap-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          </div>
+          <h3>Print &amp; Web Cartography</h3>
+          <p>Full-page A4/A5/A3/Letter print sheets at 300 DPI with X/Y axes, 5 vector north arrows, ArcGIS scale bars, plus self-contained MapLibre HTML.</p>
+          <code class="cap-cmd">lulc map --page-size a4 --html</code>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="examples" class="section section-alt">
     <div class="container">
       <div class="section-header">
         <div>
@@ -409,7 +394,7 @@
     </div>
   </section>
 
-  <section id="runtimes" class="section section-alt">
+  <section id="runtimes" class="section">
     <div class="container">
       <div class="section-header">
         <div>
@@ -455,6 +440,21 @@
           </ul>
           <a class="btn btn-primary btn-sm" href="https://huggingface.co/spaces/madeshchakma/LULCkit" target="_blank" rel="noopener">Launch Live Space (ZeroGPU)</a>
         </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="stack-strip" aria-label="Built on open-source geospatial standards">
+    <div class="container stack-inner">
+      <span class="stack-label">Built on Open-Source GIS &amp; ML</span>
+      <div class="stack-items">
+        <span class="stack-chip">Rasterio / GDAL</span>
+        <span class="stack-chip">PyProj (WGS84 Geodesic)</span>
+        <span class="stack-chip">Shapely</span>
+        <span class="stack-chip">PyTorch + SegFormer</span>
+        <span class="stack-chip">Dynamic World</span>
+        <span class="stack-chip">MapLibre GL JS</span>
+        <span class="stack-chip">GeoTIFF.js</span>
       </div>
     </div>
   </section>
