@@ -7,6 +7,17 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+try:
+    import spaces  # Hugging Face ZeroGPU runtime
+
+    _gpu = getattr(spaces, "GPU", None)
+except ImportError:
+    _gpu = None
+
+if _gpu is None:
+    def _gpu(fn: Any) -> Any:
+        return fn
+
 # Fallback to local repo src/ when running from a checkout without pip install -e .
 _REPO_SRC = Path(__file__).resolve().parent.parent / "src"
 if _REPO_SRC.is_dir() and str(_REPO_SRC) not in sys.path:
@@ -192,6 +203,65 @@ def run_bands_space(
     return str(out_png), str(out_tif), f"Exported **{tag}** (`bands={chosen}`) successfully."
 
 
+@_gpu
+def _gradio_run_map(
+    f: Any,
+    m: str,
+    t: str,
+    p: str,
+    l: str,
+    c: str,
+    n: str,
+    ps: str,
+    o: str,
+    a: str,
+    s: str,
+    g: bool,
+    h: bool,
+    v: bool,
+) -> tuple[str | None, str | None, str | None, str | None, str | None, list[list[Any]], dict[str, Any]]:
+    return run_map_space(
+        f,
+        model=m,
+        title=t,
+        palette=p,
+        class_labels=l,
+        class_colors=c,
+        nodata_value=n,
+        page_size=ps,
+        orientation=o,
+        arrow_style=a,
+        scalebar_style=s,
+        show_grid=g,
+        export_html=h,
+        export_vector=v,
+    )
+
+
+def _gradio_run_bands(
+    f: Any,
+    md: str,
+    idx: str,
+    cmp_: str,
+    rgb: str,
+    sb: float | int | None,
+    cm: str,
+    t: str,
+    ps: str,
+) -> tuple[str, str, str]:
+    return run_bands_space(
+        f,
+        mode=md,
+        index_name=idx,
+        composite_name=cmp_,
+        rgb_bands=rgb,
+        single_band=int(sb or 1),
+        cmap_name=cm,
+        title=t,
+        page_size=ps,
+    )
+
+
 def build_app() -> Any:
     """Construct the Gradio Blocks UI (imports gradio lazily for headless testing)."""
     import gradio as gr
@@ -239,22 +309,7 @@ def build_app() -> Any:
                     out_report = gr.JSON(label="Metadata & Inference Report")
 
             map_btn.click(
-                fn=lambda f, m, t, p, l, c, n, ps, o, a, s, g, h, v: run_map_space(
-                    f,
-                    model=m,
-                    title=t,
-                    palette=p,
-                    class_labels=l,
-                    class_colors=c,
-                    nodata_value=n,
-                    page_size=ps,
-                    orientation=o,
-                    arrow_style=a,
-                    scalebar_style=s,
-                    show_grid=g,
-                    export_html=h,
-                    export_vector=v,
-                ),
+                fn=_gradio_run_map,
                 inputs=[
                     map_file, map_model, map_title, map_palette, map_labels, map_colors, map_nodata,
                     map_page, map_ori, map_arrow, map_scale, map_grid, map_html, map_vec,
@@ -281,17 +336,7 @@ def build_app() -> Any:
                     b_msg = gr.Markdown()
 
             b_btn.click(
-                fn=lambda f, md, idx, cmp_, rgb, sb, cm, t, ps: run_bands_space(
-                    f,
-                    mode=md,
-                    index_name=idx,
-                    composite_name=cmp_,
-                    rgb_bands=rgb,
-                    single_band=int(sb or 1),
-                    cmap_name=cm,
-                    title=t,
-                    page_size=ps,
-                ),
+                fn=_gradio_run_bands,
                 inputs=[b_file, b_mode, b_index, b_comp, b_rgb, b_single, b_cmap, b_title, b_page],
                 outputs=[b_preview, b_tif, b_msg],
             )
