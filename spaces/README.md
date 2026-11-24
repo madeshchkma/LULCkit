@@ -1,15 +1,15 @@
 ---
 title: LULCkit Studio
-emoji: "\U0001F6F0"
-colorFrom: teal
-colorTo: slate
+emoji: 🗺️
+colorFrom: green
+colorTo: blue
 sdk: gradio
 sdk_version: "5.12.0"
 python_version: "3.12"
 app_file: app.py
 pinned: false
 license: mit
-short_description: Any GeoTIFF to GIS-ready LULC maps, indices, and metadata reports
+short_description: Turn any GeoTIFF into LULC maps, indices & area reports
 ---
 
 # LULCkit Studio on Hugging Face Spaces
