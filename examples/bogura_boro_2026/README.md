@@ -76,6 +76,7 @@ Generated from [`outputs/Bogura_Boro_Map_10m_2026_summary.csv`](outputs/Bogura_B
 
 ## Bundled Sample Outputs
 
+- [Styled LULC GeoTIFF (with embedded GDAL ColorTable & overviews)](outputs/Bogura_Boro_Map_10m_2026_lulc.tif)
 - [Print Map PNG (`300 DPI`, A4 Landscape)](outputs/Bogura_Boro_Map_10m_2026_preview.png)
 - [Area Summary CSV](outputs/Bogura_Boro_Map_10m_2026_summary.csv)
 - [Full Metadata & Analytics JSON](outputs/Bogura_Boro_Map_10m_2026_report.json)

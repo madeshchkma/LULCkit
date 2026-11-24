@@ -100,7 +100,7 @@ lulc map examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026.tif \
 | `1` | Early/Normal Boro Rice (`#38A800`) | 866,146 | 1.6867% | 8,661.46 | 86.61 |
 | `2` | Late-Transplanted Boro Rice (`#E60000`) | 9,700,390 | 18.8899% | 97,003.90 | 970.04 |
 
-Explore the full guide and sample outputs in [`examples/bogura_boro_2026/README.md`](examples/bogura_boro_2026/README.md): [CSV summary](examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_summary.csv) · [JSON report](examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_report.json) · [Interactive MapLibre HTML](examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_map.html).
+Explore the full guide and sample outputs in [`examples/bogura_boro_2026/README.md`](examples/bogura_boro_2026/README.md): [Input GeoTIFF](examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026.tif) · [Styled LULC GeoTIFF](examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_lulc.tif) · [CSV summary](examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_summary.csv) · [JSON report](examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_report.json) · [Interactive MapLibre HTML](examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_map.html).
 
 ---
 
