@@ -2,7 +2,10 @@
 
 This example demonstrates running `LULCkit` (`lulckit` / `lulc`) on a real 10-meter single-band pre-classified Cloud-Optimized GeoTIFF (`Bogura_Boro_Map_10m_2026.tif`).
 
-![Boro Area Mapping for Bogura - 2026](outputs/Bogura_Boro_Map_10m_2026_preview.png)
+| Input: Raw GeoTIFF ([`Bogura_Boro_Map_10m_2026.tif`](Bogura_Boro_Map_10m_2026.tif)) | Output: LULCkit Print Map ([`_preview.png`](outputs/Bogura_Boro_Map_10m_2026_preview.png)) |
+| :---: | :---: |
+| [![Raw Input GeoTIFF](Bogura_Boro_Map_10m_2026_input_preview.png)](Bogura_Boro_Map_10m_2026.tif) | [![Boro Area Mapping for Bogura - 2026](outputs/Bogura_Boro_Map_10m_2026_preview.png)](outputs/Bogura_Boro_Map_10m_2026_preview.png) |
+| *Raw 1-band `uint8` grayscale raster (values `0–2`, unstyled). Click image to view/download the `.tif`.* | *Auto-styled A4 map with UTM X/Y axes, compass rose, ArcGIS scale bar, legend, and embedded GeoTIFF ColorTable.* |
 
 ## Included Dataset Specifications
 

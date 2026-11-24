@@ -92,7 +92,10 @@ lulc map examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026.tif \
   --page-size a4 --arrow-style compass --scalebar-style arcgis --html
 ```
 
-![Boro Area Mapping for Bogura - 2026](examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_preview.png)
+| Input: Raw GeoTIFF ([`Bogura_Boro_Map_10m_2026.tif`](examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026.tif)) | Output: LULCkit Print Map ([`_preview.png`](examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_preview.png)) |
+| :---: | :---: |
+| [![Raw Input GeoTIFF](examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026_input_preview.png)](examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026.tif) | [![Boro Area Mapping for Bogura - 2026](examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_preview.png)](examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_preview.png) |
+| *Raw 1-band `uint8` grayscale raster (values `0–2`, unstyled). Click image to view/download the `.tif`.* | *Auto-styled A4 map with UTM X/Y axes, compass rose, ArcGIS scale bar, legend, and embedded GeoTIFF ColorTable.* |
 
 | Class ID | Class Name | Pixels | Share (%) | Area (ha) | Area (km²) |
 | ---: | :--- | ---: | ---: | ---: | ---: |
