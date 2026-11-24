@@ -786,3 +786,55 @@ def test_bands_clip_batch_and_wizard(tmp_path: Path) -> None:
     assert "lulc map" in r_wiz.output
     assert (wiz_out / "cat_src_lulc.tif").is_file()
     assert (wiz_out / "cat_src_preview.png").is_file()
+
+
+def test_spaces_handlers_and_pages_assets(tmp_path: Path) -> None:
+    """Verify GitHub Pages assets exist and Spaces handlers run end-to-end offline."""
+    import importlib.util
+    import shutil
+
+    root = Path(__file__).resolve().parent.parent
+    required = [
+        root / "docs" / ".nojekyll",
+        root / "docs" / "index.html",
+        root / "docs" / "app.js",
+        root / "docs" / "styles.css",
+        root / ".github" / "workflows" / "pages.yml",
+        root / "spaces" / "app.py",
+        root / "spaces" / "requirements.txt",
+        root / "spaces" / "README.md",
+    ]
+    for path in required:
+        assert path.is_file(), f"Missing web/deploy file: {path}"
+
+    spec = importlib.util.spec_from_file_location("lulckit_spaces_app", root / "spaces" / "app.py")
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    arr = np.zeros((1, 48, 48), dtype=np.uint8)
+    arr[0, 10:25, 10:25] = 1
+    arr[0, 25:42, 20:40] = 2
+    tif_path = _write_geotiff(tmp_path / "space_cat.tif", arr, crs="EPSG:32645")
+
+    summary, profile_dict = mod.run_inspect_space(tif_path)
+    assert "EPSG:32645" in summary
+    assert profile_dict["detected_profile"] == "categorical-classified"
+
+    prev_png, out_tif, out_csv, out_json, out_html, rows, report = mod.run_map_space(
+        tif_path,
+        model="categorical",
+        title="Spaces Smoke Test",
+        export_html=True,
+    )
+    try:
+        assert prev_png and Path(prev_png).is_file()
+        assert out_tif and Path(out_tif).is_file()
+        assert out_csv and Path(out_csv).is_file()
+        assert out_json and Path(out_json).is_file()
+        assert out_html and Path(out_html).is_file()
+        assert len(rows) == 3
+        assert len(report["lulc"]["classes"]) == 3
+    finally:
+        if prev_png:
+            shutil.rmtree(Path(prev_png).parent, ignore_errors=True)

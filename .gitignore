@@ -11,6 +11,8 @@ tmp/
 !tests/**
 !examples/
 !examples/**
+!docs/
+!docs/**
 
 # Python
 __pycache__/

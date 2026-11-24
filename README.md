@@ -5,8 +5,11 @@
 [![Geospatial: Rasterio](https://img.shields.io/badge/GIS-Rasterio%20%7C%20PyProj%20%7C%20Shapely-0d9488.svg)](https://rasterio.readthedocs.io/)
 [![Deep Learning: PyTorch](https://img.shields.io/badge/Models-PyTorch%20%7C%20Transformers-ee4c2c.svg)](https://pytorch.org/)
 [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088ff.svg)](.github/workflows/ci.yml)
+[![Website](https://img.shields.io/badge/Website-Browser%20Studio-0f766e.svg)](https://madeshchkma.github.io/LULCkit/)
 
 **`LULCkit`** is a fast, offline-capable command-line toolkit (invoked via `lulckit` or the short alias `lulc`) that turns any optical or pre-classified TIFF/GeoTIFF into **GIS-ready Land Use / Land Cover (LULC) maps, multiband composites, spectral indices, clipped rasters, interactive web maps, and complete metadata reports** — without needing ArcGIS or QGIS open.
+
+> **Live Website & Browser GeoTIFF Studio (Free on GitHub Pages):** https://madeshchkma.github.io/LULCkit/
 
 ---
 
@@ -159,13 +162,22 @@ lulc map drone_rgb.tif -o ./out/ --model rgb-fast --vector --save-confidence
 
 ---
 
+## Web Hosting (GitHub Pages + Hugging Face Spaces)
+
+- **GitHub Pages Static Website & Client-Side Browser Studio ([`docs/`](docs/)):** Hosted free at https://madeshchkma.github.io/LULCkit/ via [`.github/workflows/pages.yml`](.github/workflows/pages.yml). Visitors can drop any `.tif` file into their browser to inspect metadata, style categorical classes, compute `NDVI`/`NDWI`/`NDBI`, view MapLibre overlays, and download high-res PNG/CSV/JSON outputs with zero server needed.
+- **Hugging Face Spaces Gradio App ([`spaces/`](spaces/)):** Deploy [`spaces/app.py`](spaces/app.py), [`spaces/requirements.txt`](spaces/requirements.txt), and [`spaces/README.md`](spaces/README.md) to a free Hugging Face Space (CPU Basic 16 GB) for server-side PyTorch SegFormer (`rgb-oem`, `rgb-fast`) and Sentinel-2 Dynamic World (`s2-dw`) inference.
+
+---
+
 ## Project Architecture
 
 ```text
 LULCkit/
-├── .github/                  # CI workflow and issue/PR templates
+├── .github/                  # CI and GitHub Pages workflows + issue/PR templates
+├── docs/                     # GitHub Pages website & client-side Browser GeoTIFF Studio
 ├── examples/
 │   └── bogura_boro_2026/     # Bundled 10m COG GeoTIFF sample & rendered outputs
+├── spaces/                   # Gradio app ready for Hugging Face Spaces deployment
 ├── src/lulckit/
 │   ├── __init__.py           # Package version
 │   ├── cli.py                # Typer CLI commands & Rich help panels

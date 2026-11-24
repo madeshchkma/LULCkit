@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LULCkit — GeoTIFF LULC Cartography CLI &amp; Browser Studio</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <span>LULCkit</span>
+        <span class="brand-badge">v0.1.0</span>
+      </div>
+      <nav class="nav">
+        <a href="#studio">Browser Studio</a>
+        <a href="#demo">Bogura 2026 Demo</a>
+        <a href="#cli">CLI Reference</a>
+        <a href="#spaces">Cloud ML (HF Spaces)</a>
+        <a href="https://github.com/madeshchkma/LULCkit" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <h1>Turn Any GeoTIFF Into Publication LULC Maps &amp; Area Reports</h1>
+      <p>
+        Offline Python CLI, full-page cartographic print layouts (A4/A5/A3/Letter), spectral indices,
+        interactive MapLibre web maps, and a 100% client-side browser GeoTIFF studio — zero server or GIS license required.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#studio">Open Browser Studio</a>
+        <a class="btn btn-outline-light" href="demo/Bogura_Boro_Map_10m_2026_map.html" target="_blank" rel="noopener">Live Bogura Interactive Map</a>
+        <a class="btn btn-outline-light" href="https://github.com/madeshchkma/LULCkit" target="_blank" rel="noopener">View Source on GitHub</a>
+      </div>
+      <div class="install-box">
+        <code id="installCmd">pip install git+https://github.com/madeshchkma/LULCkit.git</code>
+        <button class="btn btn-sm" id="copyInstallBtn" type="button">Copy</button>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+    <section id="studio" class="section">
+      <div class="section-header">
+        <div>
+          <h2>Browser GeoTIFF Studio</h2>
+          <p class="section-sub">Runs 100% locally in your browser using <code>geotiff.js</code>, <code>proj4</code>, HTML5 Canvas, and MapLibre GL JS — your files never leave your computer.</p>
+        </div>
+        <button class="btn btn-primary" id="loadSampleBtn" type="button">Load Bogura 2026 Sample (10m COG)</button>
+      </div>
+
+      <div class="studio-grid">
+        <aside class="card">
+          <div class="dropzone" id="dropzone">
+            <strong>Drop a .tif / .tiff GeoTIFF here</strong>
+            <span>or click to select a raster from your computer</span>
+            <input id="fileInput" type="file" accept=".tif,.tiff" class="hidden" />
+          </div>
+
+          <div class="field">
+            <label for="modeSelect">Studio Mode</label>
+            <select id="modeSelect">
+              <option value="categorical">Categorical / LULC Map</option>
+              <option value="rgb">RGB Band Composite</option>
+              <option value="index">Spectral Index (NDVI / NDWI / NDBI)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="titleInput">Map Title</label>
+            <input id="titleInput" type="text" value="Boro Area Mapping for Bogura - 2026" />
+          </div>
+
+          <div id="categoricalControls" class="ctrl-group">
+            <h3>Categorical Styling</h3>
+            <div class="field">
+              <label for="paletteSelect">Color Palette</label>
+              <select id="paletteSelect">
+                <option value="arcgis-crop" selected>arcgis-crop (ArcGIS Green / Red / Amber)</option>
+                <option value="default">default (Emerald / Terracotta / Blue)</option>
+                <option value="vivid">vivid (Okabe-Ito High Contrast)</option>
+                <option value="earth">earth (Muted Cartographic)</option>
+                <option value="pastel">pastel (ColorBrewer Soft)</option>
+                <option value="colorblind">colorblind (Accessible)</option>
+              </select>
+            </div>
+            <div id="classEditors"></div>
+          </div>
+
+          <div id="rgbControls" class="ctrl-group hidden">
+            <h3>RGB Bands (1-Based)</h3>
+            <div class="field">
+              <label for="rgbPresetSelect">Quick Composite Preset</label>
+              <select id="rgbPresetSelect">
+                <option value="custom">Custom Bands</option>
+                <option value="1,2,3">Bands 1, 2, 3 (Natural RGB)</option>
+                <option value="4,3,2">Bands 4, 3, 2 (Sentinel-2 True Color)</option>
+                <option value="8,4,3">Bands 8, 4, 3 (False Color NIR)</option>
+                <option value="11,8,2">Bands 11, 8, 2 (Agriculture)</option>
+              </select>
+            </div>
+            <div class="field-row-3">
+              <div class="field"><label for="bandR">Red</label><input id="bandR" type="number" min="1" value="1" /></div>
+              <div class="field"><label for="bandG">Green</label><input id="bandG" type="number" min="1" value="2" /></div>
+              <div class="field"><label for="bandB">Blue</label><input id="bandB" type="number" min="1" value="3" /></div>
+            </div>
+          </div>
+
+          <div id="indexControls" class="ctrl-group hidden">
+            <h3>Spectral Index</h3>
+            <div class="field">
+              <label for="indexType">Index Formula</label>
+              <select id="indexType">
+                <option value="ndvi">NDVI = (Band A - Band B) / (Band A + Band B)</option>
+                <option value="ndwi">NDWI = (Band A - Band B) / (Band A + Band B)</option>
+                <option value="ndbi">NDBI = (Band A - Band B) / (Band A + Band B)</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <div class="field"><label for="idxBandA">Band A (NIR/Green)</label><input id="idxBandA" type="number" min="1" value="1" /></div>
+              <div class="field"><label for="idxBandB">Band B (Red/NIR)</label><input id="idxBandB" type="number" min="1" value="2" /></div>
+            </div>
+            <div class="field">
+              <label for="idxCmap">Colormap</label>
+              <select id="idxCmap">
+                <option value="RdYlGn">RdYlGn (Vegetation)</option>
+                <option value="Blues">Blues (Water)</option>
+                <option value="RdBu">RdBu (Diverging)</option>
+                <option value="Viridis">Viridis (Perceptual)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="ctrl-group">
+            <h3>Print Cartography Layout</h3>
+            <div class="field-row">
+              <div class="field">
+                <label for="pageSizeSelect">Page Size</label>
+                <select id="pageSizeSelect">
+                  <option value="a4" selected>A4</option>
+                  <option value="a5">A5</option>
+                  <option value="a3">A3</option>
+                  <option value="letter">Letter</option>
+                  <option value="square">Square</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="orientationSelect">Orientation</label>
+                <select id="orientationSelect">
+                  <option value="auto" selected>Auto</option>
+                  <option value="landscape">Landscape</option>
+                  <option value="portrait">Portrait</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="arrowStyleSelect">North Arrow</label>
+                <select id="arrowStyleSelect">
+                  <option value="compass" selected>compass (8-pt rose)</option>
+                  <option value="classic">classic (ESRI split)</option>
+                  <option value="fancy">fancy (4-pt star)</option>
+                  <option value="minimal">minimal (N arrow)</option>
+                  <option value="none">none</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="scalebarStyleSelect">Scale Bar</label>
+                <select id="scalebarStyleSelect">
+                  <option value="arcgis" selected>arcgis (Ticks)</option>
+                  <option value="alternating">alternating</option>
+                  <option value="simple">simple</option>
+                  <option value="none">none</option>
+                </select>
+              </div>
+            </div>
+            <label class="check-row">
+              <input id="gridCheck" type="checkbox" checked />
+              Show X/Y Coordinate Axes &amp; Gridlines
+            </label>
+          </div>
+        </aside>
+
+        <div class="card">
+          <div class="status-bar">
+            <span id="statusText">Click <strong>Load Bogura 2026 Sample</strong> or drop any <code>.tif</code> file to begin.</span>
+            <span id="profileBadge"></span>
+          </div>
+
+          <div class="tabs">
+            <div class="tab-buttons">
+              <button class="tab-btn active" id="tabPrintBtn" type="button">Print Map</button>
+              <button class="tab-btn" id="tabWebMapBtn" type="button">Interactive Web Map</button>
+            </div>
+            <div class="export-buttons">
+              <button class="btn btn-sm" id="downloadPngBtn" type="button" disabled>Download PNG</button>
+              <button class="btn btn-sm" id="downloadCsvBtn" type="button" disabled>Download CSV</button>
+              <button class="btn btn-sm" id="downloadJsonBtn" type="button" disabled>Download JSON</button>
+            </div>
+          </div>
+
+          <div id="printView" class="canvas-wrap">
+            <canvas id="printCanvas" width="1200" height="850"></canvas>
+          </div>
+
+          <div id="webMapView" class="webmap-wrap hidden">
+            <div id="webMap"></div>
+            <div class="map-overlay-ctrl">
+              <label for="basemapSelect" style="font-weight:600;display:block;margin-bottom:4px;">Basemap</label>
+              <select id="basemapSelect" style="width:100%;margin-bottom:8px;padding:4px;">
+                <option value="positron" selected>Carto Positron Light</option>
+                <option value="osm">OpenStreetMap</option>
+                <option value="esri">Esri World Imagery</option>
+              </select>
+              <label for="opacitySlider" style="font-weight:600;display:block;">Layer Opacity: <span id="opacityVal">85%</span></label>
+              <input id="opacitySlider" type="range" min="0" max="100" value="85" style="width:100%;" />
+            </div>
+            <div class="map-coords" id="mapCoords">Move cursor over map</div>
+          </div>
+
+          <div class="meta-grid" id="metaGrid"></div>
+
+          <div class="table-wrap" id="analyticsWrap"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="demo" class="section">
+      <div class="section-header">
+        <div>
+          <h2>Bundled Example: Bogura Boro Rice Mapping (2026)</h2>
+          <p class="section-sub">Real 10m pre-classified Cloud-Optimized GeoTIFF (<code>7,937 × 6,470 px</code>, <code>EPSG:32645</code>, <code>513,523.90 ha</code>).</p>
+        </div>
+        <a class="btn btn-sm" href="demo/Bogura_Boro_Map_10m_2026.tif" download>Download Sample GeoTIFF (2.56 MB)</a>
+      </div>
+
+      <div class="compare-grid">
+        <figure class="card compare-card">
+          <img
+            src="demo/Bogura_Boro_Map_10m_2026_input_preview.png"
+            onerror="this.onerror=null;this.src='../examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026_input_preview.png';"
+            alt="Raw unstyled Bogura Boro 10m GeoTIFF input"
+          />
+          <figcaption><strong>Input GeoTIFF:</strong> Raw 1-band <code>uint8</code> discrete raster (<code>0, 1, 2</code>, unstyled).</figcaption>
+        </figure>
+        <figure class="card compare-card">
+          <img
+            src="demo/Bogura_Boro_Map_10m_2026_preview.png"
+            onerror="this.onerror=null;this.src='../examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_preview.png';"
+            alt="LULCkit publication print map output for Bogura"
+          />
+          <figcaption><strong>Output Map:</strong> LULCkit A4 layout with UTM X/Y axes, compass rose, ArcGIS scale bar, and legend.</figcaption>
+        </figure>
+      </div>
+
+      <div class="card">
+        <div class="section-header" style="margin-bottom:10px;">
+          <h3 style="margin:0;font-size:17px;">Pre-Generated Interactive MapLibre GL JS Viewer</h3>
+          <a class="btn btn-sm" href="demo/Bogura_Boro_Map_10m_2026_map.html" target="_blank" rel="noopener">Open Fullscreen</a>
+        </div>
+        <iframe
+          class="demo-iframe"
+          title="Bogura Boro Map Interactive Preview"
+          src="demo/Bogura_Boro_Map_10m_2026_map.html"
+          loading="lazy"
+        ></iframe>
+      </div>
+    </section>
+
+    <section id="cli" class="section">
+      <div class="two-col">
+        <div class="card">
+          <h2 style="margin-top:0;">Python CLI (`lulckit` / `lulc`)</h2>
+          <p class="section-sub">Use the CLI for multi-gigabyte rasters (`O(1)` RAM tiling), PyTorch SegFormer &amp; Sentinel-2 Dynamic World ML inference, vector GeoJSON export, PDF/SVG print export, and directory batching.</p>
+          <pre><code># Inspect every tag, CRS, GSD, and band statistic
+lulc inspect examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026.tif
+
+# Pre-classified or ML LULC map + PDF/PNG + CSV/JSON + HTML
+lulc map Bogura_Boro_Map_10m_2026.tif -o ./out/bogura \
+  --title "Boro Area Mapping for Bogura - 2026" \
+  --palette arcgis-crop --page-size a4 --html
+
+# Optical RGB / Sentinel-2 ML inference + GeoJSON polygons
+lulc map sentinel2.tif -o ./out/s2 --model s2-dw --vector
+
+# Multiband composites &amp; spectral indices
+lulc bands sentinel2.tif --composite false-color-nir -o cir.png
+lulc bands sentinel2.tif --index ndvi -o ndvi.tif --preview-out ndvi.png</code></pre>
+        </div>
+
+        <div id="spaces" class="card">
+          <h2 style="margin-top:0;">Cloud PyTorch ML on Hugging Face Spaces (Free)</h2>
+          <p class="section-sub">Because GitHub Pages only serves static HTML/JS, this repository also includes a ready-to-deploy Gradio app in <code>spaces/</code> for server-side <strong>PyTorch SegFormer (`rgb-oem`, `rgb-fast`)</strong> &amp; <strong>Dynamic World (`s2-dw`)</strong> inference on Hugging Face's free CPU tier (2 vCPU / 16 GB RAM).</p>
+          <pre><code>1. Create a free Space at huggingface.co/new-space
+   (SDK: Gradio · Hardware: CPU Basic Free)
+2. Upload the 3 files inside spaces/:
+   - spaces/README.md
+   - spaces/requirements.txt
+   - spaces/app.py
+3. Hugging Face builds automatically from:
+   https://github.com/madeshchkma/LULCkit</code></pre>
+          <p style="margin-top:12px;">
+            <a class="btn btn-primary btn-sm" href="https://github.com/madeshchkma/LULCkit/tree/main/spaces" target="_blank" rel="noopener">View spaces/ Files on GitHub</a>
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <strong>LULCkit</strong> — Open-source MIT toolkit by <a href="https://github.com/madeshchkma" target="_blank" rel="noopener">MADESH CHAKMA</a> ·
+      <a href="https://github.com/madeshchkma/LULCkit" target="_blank" rel="noopener">Repository</a> ·
+      <a href="https://github.com/madeshchkma/LULCkit/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
