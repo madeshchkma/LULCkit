@@ -33,6 +33,7 @@
       </p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="#studio">Open Browser Studio</a>
+        <a class="btn btn-outline-light" href="https://huggingface.co/spaces/madeshchakma/LULCkit" target="_blank" rel="noopener">Launch Cloud ML App (HF Spaces)</a>
         <a class="btn btn-outline-light" href="demo/Bogura_Boro_Map_10m_2026_map.html" target="_blank" rel="noopener">Live Bogura Interactive Map</a>
         <a class="btn btn-outline-light" href="https://github.com/madeshchkma/LULCkit" target="_blank" rel="noopener">View Source on GitHub</a>
       </div>
@@ -293,19 +294,22 @@ lulc bands sentinel2.tif --index ndvi -o ndvi.tif --preview-out ndvi.png</code><
         </div>
 
         <div id="spaces" class="card">
-          <h2 style="margin-top:0;">Cloud PyTorch ML on Hugging Face Spaces (Free)</h2>
-          <p class="section-sub">Because GitHub Pages only serves static HTML/JS, this repository also includes a ready-to-deploy Gradio app in <code>spaces/</code> for server-side <strong>PyTorch SegFormer (`rgb-oem`, `rgb-fast`)</strong> &amp; <strong>Dynamic World (`s2-dw`)</strong> inference on Hugging Face's free CPU tier (2 vCPU / 16 GB RAM).</p>
-          <pre><code>1. Create a free Space at huggingface.co/new-space
-   (SDK: Gradio · Hardware: CPU Basic Free)
-2. Upload the 3 files inside spaces/:
-   - spaces/README.md
-   - spaces/requirements.txt
-   - spaces/app.py
-3. Hugging Face builds automatically from:
-   https://github.com/madeshchkma/LULCkit</code></pre>
-          <p style="margin-top:12px;">
-            <a class="btn btn-primary btn-sm" href="https://github.com/madeshchkma/LULCkit/tree/main/spaces" target="_blank" rel="noopener">View spaces/ Files on GitHub</a>
-          </p>
+          <h2 style="margin-top:0;">Cloud PyTorch ML on Hugging Face Spaces (Live on ZeroGPU)</h2>
+          <p class="section-sub">Our Gradio app is live on Hugging Face ZeroGPU for server-side <strong>PyTorch SegFormer (`rgb-oem`, `rgb-fast`)</strong> &amp; <strong>Sentinel-2 Dynamic World (`s2-dw`)</strong> inference, publication A4/A5 maps, spectral indices, and area analytics.</p>
+          <pre><code>Live Space:
+https://huggingface.co/spaces/madeshchakma/LULCkit
+
+Direct Gradio App:
+https://madeshchakma-lulckit.hf.space
+
+Source files (spaces/):
+- spaces/README.md
+- spaces/requirements.txt
+- spaces/app.py</code></pre>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+            <a class="btn btn-primary btn-sm" href="https://huggingface.co/spaces/madeshchakma/LULCkit" target="_blank" rel="noopener">Launch Live Space (ZeroGPU)</a>
+            <a class="btn btn-sm" href="https://github.com/madeshchkma/LULCkit/tree/main/spaces" target="_blank" rel="noopener">View spaces/ Files on GitHub</a>
+          </div>
         </div>
       </div>
     </section>

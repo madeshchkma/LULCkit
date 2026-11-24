@@ -6,10 +6,12 @@
 [![Deep Learning: PyTorch](https://img.shields.io/badge/Models-PyTorch%20%7C%20Transformers-ee4c2c.svg)](https://pytorch.org/)
 [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088ff.svg)](.github/workflows/ci.yml)
 [![Website](https://img.shields.io/badge/Website-Browser%20Studio-0f766e.svg)](https://madeshchkma.github.io/LULCkit/)
+[![Hugging Face Spaces](https://img.shields.io/badge/Cloud%20ML-HF%20Spaces%20(ZeroGPU)-ff9d00.svg)](https://huggingface.co/spaces/madeshchakma/LULCkit)
 
 **`LULCkit`** is a fast, offline-capable command-line toolkit (invoked via `lulckit` or the short alias `lulc`) that turns any optical or pre-classified TIFF/GeoTIFF into **GIS-ready Land Use / Land Cover (LULC) maps, multiband composites, spectral indices, clipped rasters, interactive web maps, and complete metadata reports** — without needing ArcGIS or QGIS open.
 
-> **Live Website & Browser GeoTIFF Studio (Free on GitHub Pages):** https://madeshchkma.github.io/LULCkit/
+> - **Browser GeoTIFF Studio (GitHub Pages):** https://madeshchkma.github.io/LULCkit/
+> - **Cloud ML App (Hugging Face Spaces — ZeroGPU):** https://huggingface.co/spaces/madeshchakma/LULCkit
 
 ---
 
@@ -165,7 +167,7 @@ lulc map drone_rgb.tif -o ./out/ --model rgb-fast --vector --save-confidence
 ## Web Hosting (GitHub Pages + Hugging Face Spaces)
 
 - **GitHub Pages Static Website & Client-Side Browser Studio ([`docs/`](docs/)):** Hosted free at https://madeshchkma.github.io/LULCkit/ via [`.github/workflows/pages.yml`](.github/workflows/pages.yml). Visitors can drop any `.tif` file into their browser to inspect metadata, style categorical classes, compute `NDVI`/`NDWI`/`NDBI`, view MapLibre overlays, and download high-res PNG/CSV/JSON outputs with zero server needed.
-- **Hugging Face Spaces Gradio App ([`spaces/`](spaces/)):** Deploy [`spaces/app.py`](spaces/app.py), [`spaces/requirements.txt`](spaces/requirements.txt), and [`spaces/README.md`](spaces/README.md) to a free Hugging Face Space (CPU Basic 16 GB) for server-side PyTorch SegFormer (`rgb-oem`, `rgb-fast`) and Sentinel-2 Dynamic World (`s2-dw`) inference.
+- **Hugging Face Spaces Gradio App ([`spaces/`](spaces/)):** Live on ZeroGPU at https://huggingface.co/spaces/madeshchakma/LULCkit (source files: [`spaces/app.py`](spaces/app.py), [`spaces/requirements.txt`](spaces/requirements.txt), [`spaces/README.md`](spaces/README.md)) for server-side PyTorch SegFormer (`rgb-oem`, `rgb-fast`) and Sentinel-2 Dynamic World (`s2-dw`) inference.
 
 ---
 
