@@ -1,0 +1,4 @@
+class_id,class_name,hex_color,pixels,percent,area_m2,area_ha,area_km2,mean_confidence
+0,Non Boro,#FFFFFF,40785854,79.4235,4078585400.0,407858.54,4078.5854,
+1,Early/Normal Boro Rice,#38A800,866146,1.6867,86614600.0,8661.46,86.6146,
+2,Late-Transplanted Boro Rice,#E60000,9700390,18.8899,970039000.0,97003.9,970.039,

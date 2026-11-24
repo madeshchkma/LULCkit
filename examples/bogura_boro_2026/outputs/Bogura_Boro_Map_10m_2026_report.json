@@ -1,0 +1,200 @@
+{
+  "tool": {
+    "name": "lulckit",
+    "version": "0.1.0"
+  },
+  "file": {
+    "path": "examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026.tif",
+    "file_name": "Bogura_Boro_Map_10m_2026.tif",
+    "file_size_bytes": 2689186,
+    "file_size_human": "2.56 MB",
+    "driver": "GTiff",
+    "width": 7937,
+    "height": 6470,
+    "band_count": 1,
+    "total_pixels": 51352390,
+    "dtypes": [
+      "uint8"
+    ],
+    "nodata": null,
+    "compression": "LZW",
+    "is_tiled": true,
+    "block_shapes": [
+      [
+        256,
+        256
+      ]
+    ],
+    "interleave": "BAND",
+    "photometric": null,
+    "overviews": [
+      2,
+      4,
+      8,
+      16,
+      32
+    ],
+    "is_cog_like": true,
+    "stats_sampled": true,
+    "valid_pixel_ratio": 1.0,
+    "detected_profile": "categorical-classified"
+  },
+  "geospatial": {
+    "is_georeferenced": true,
+    "crs_epsg": 32645,
+    "crs_name": "WGS 84 / UTM zone 45N",
+    "crs_units": "metre",
+    "crs_is_projected": true,
+    "crs_is_geographic": false,
+    "crs_wkt": "PROJCS[\"WGS 84 / UTM zone 45N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",87],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32645\"]]",
+    "crs_proj4": "+proj=utm +zone=45 +datum=WGS84 +units=m +no_defs=True",
+    "transform": [
+      10.0,
+      0.0,
+      698500.0,
+      0.0,
+      -10.0,
+      2780590.0
+    ],
+    "gsd_meters": [
+      10.0,
+      10.0
+    ],
+    "bounds_native": [
+      698500.0,
+      2715890.0,
+      777870.0,
+      2780590.0
+    ],
+    "bounds_wgs84": [
+      88.9596845,
+      24.5319896,
+      89.7555507,
+      25.1281824
+    ],
+    "centroid_wgs84": [
+      89.3576176,
+      24.830086
+    ],
+    "total_area_m2": 5135239000.0,
+    "total_area_ha": 513523.9,
+    "total_area_km2": 5135.239,
+    "valid_area_m2": 5135239000.0,
+    "valid_area_ha": 513523.9,
+    "valid_area_km2": 5135.239
+  },
+  "bands": [
+    {
+      "index": 1,
+      "dtype": "uint8",
+      "nodata": null,
+      "description": "Boro_Class",
+      "colorinterp": "gray",
+      "min": 0.0,
+      "max": 2.0,
+      "mean": 0.3944089905799732,
+      "std": 0.7851692183901522,
+      "p2": 0.0,
+      "p98": 2.0,
+      "valid_ratio": 1.0,
+      "tags": {}
+    }
+  ],
+  "tags": {
+    "AREA_OR_POINT": "Area"
+  },
+  "tag_namespaces": {
+    "IMAGE_STRUCTURE": {
+      "LAYOUT": "COG",
+      "COMPRESSION": "LZW",
+      "INTERLEAVE": "BAND",
+      "OVERVIEW_RESAMPLING": "NEAREST"
+    },
+    "DERIVED_SUBDATASETS": {
+      "DERIVED_SUBDATASET_1_NAME": "DERIVED_SUBDATASET:LOGAMPLITUDE:examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026.tif",
+      "DERIVED_SUBDATASET_1_DESC": "log10 of amplitude of input bands from examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026.tif"
+    }
+  },
+  "spectral_indices": {},
+  "inference": {
+    "model": "categorical",
+    "description": "Direct pass-through for pre-classified discrete integer GeoTIFFs (no ML inference)",
+    "optimal_gsd_m": "any",
+    "repo_id": null,
+    "device": "none (categorical)",
+    "tile_size": 512,
+    "overlap": 0,
+    "batch_size": 1,
+    "band_indices": [
+      1
+    ],
+    "preprocess_mode": "categorical",
+    "tiles_processed": 56,
+    "runtime_seconds": 1.946,
+    "valid_pixels": 51352390,
+    "nodata_pixels": 0
+  },
+  "lulc": {
+    "dominant_class": "Non Boro",
+    "classes": [
+      {
+        "id": 0,
+        "name": "Non Boro",
+        "hex": "#FFFFFF",
+        "rgb": [
+          255,
+          255,
+          255
+        ],
+        "pixels": 40785854,
+        "percent": 79.4235,
+        "area_m2": 4078585400.0,
+        "area_ha": 407858.54,
+        "area_km2": 4078.5854,
+        "mean_confidence": null
+      },
+      {
+        "id": 1,
+        "name": "Early/Normal Boro Rice",
+        "hex": "#38A800",
+        "rgb": [
+          56,
+          168,
+          0
+        ],
+        "pixels": 866146,
+        "percent": 1.6867,
+        "area_m2": 86614600.0,
+        "area_ha": 8661.46,
+        "area_km2": 86.6146,
+        "mean_confidence": null
+      },
+      {
+        "id": 2,
+        "name": "Late-Transplanted Boro Rice",
+        "hex": "#E60000",
+        "rgb": [
+          230,
+          0,
+          0
+        ],
+        "pixels": 9700390,
+        "percent": 18.8899,
+        "area_m2": 970039000.0,
+        "area_ha": 97003.9,
+        "area_km2": 970.039,
+        "mean_confidence": null
+      }
+    ]
+  },
+  "warnings": [
+    "Detected pre-classified discrete categorical raster (values: [0, 1, 2]). Pass --class-labels, --class-colors, or --nodata-value to customize styling and masking."
+  ],
+  "output_files": {
+    "lulc_geotiff": "examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_lulc.tif",
+    "report_json": "examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_report.json",
+    "summary_csv": "examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_summary.csv",
+    "preview_png": "examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_preview.png",
+    "interactive_html": "examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_map.html"
+  }
+}

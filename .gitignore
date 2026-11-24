@@ -1,0 +1,32 @@
+# Sample / scratch outputs
+out/
+tmp/
+*.tif
+*.tiff
+*.gpkg
+*.geojson
+*.png
+*.csv
+!tests/
+!tests/**
+!examples/
+!examples/**
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Environments
+.venv/
+venv/
+.env
+
+# Testing / tooling
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/

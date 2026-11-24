@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lulckit"
+version = "0.1.0"
+description = "Turn any optical or classified TIFF/GeoTIFF into GIS-ready LULC maps, band composites, spectral indices, and metadata reports."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [
+    { name = "LULCkit Contributors" },
+]
+keywords = [
+    "geotiff",
+    "lulc",
+    "land-cover",
+    "remote-sensing",
+    "gis",
+    "cli",
+    "satellite-imagery",
+    "cartography",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
+dependencies = [
+    "rasterio>=1.4",
+    "numpy>=1.26",
+    "pyproj>=3.6",
+    "shapely>=2.0",
+    "typer>=0.12",
+    "rich>=13.0",
+    "pillow>=10.0",
+    "matplotlib>=3.8",
+    "torch>=2.0",
+    "transformers>=4.40",
+    "huggingface-hub>=0.23",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[project.urls]
+Homepage = "https://github.com/madeshchkma/LULCkit"
+Repository = "https://github.com/madeshchkma/LULCkit"
+Issues = "https://github.com/madeshchkma/LULCkit/issues"
+Changelog = "https://github.com/madeshchkma/LULCkit/blob/main/CHANGELOG.md"
+
+[project.scripts]
+lulckit = "lulckit.cli:app"
+lulc = "lulckit.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501"]

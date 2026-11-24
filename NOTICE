@@ -1,0 +1,18 @@
+THIRD-PARTY NOTICES AND ATTRIBUTIONS
+
+LULCkit incorporates or downloads third-party software and pretrained model weights:
+
+1. Dynamic World PyTorch Port (`src/lulckit/models/s2_dw.py`)
+   - Adapted from `calebrob6/dynamic_world_pytorch` (Apache License 2.0)
+   - Based on Google Dynamic World v1 (Brown et al., 2022, Scientific Data,
+     https://github.com/google/dynamicworld, CC-BY 4.0 / Apache-2.0)
+
+2. Hugging Face SegFormer Land Cover Models (`src/lulckit/models/hf_segformer.py`)
+   - `nave1616/SegFormer-landcover-FT` (OpenEarthMap taxonomy)
+   - `florian-morel22/segformer-b0-deepglobe-land-cover` (DeepGlobe taxonomy)
+   - Checkpoints are downloaded from Hugging Face Hub on first use; verify model
+     cards on https://huggingface.co for dataset and checkpoint terms.
+
+3. Interactive Web Map Renderer (`src/lulckit/cartography.py`)
+   - Generated HTML maps load MapLibre GL JS (BSD-3-Clause) via unpkg CDN
+     and optionally stream public basemap tiles (Carto, OpenStreetMap, Esri).
