@@ -1216,4 +1216,124 @@
       `${stem}_report.json`
     );
   });
+
+  // --- Website UI Polish: Theme Toggle, Multi-Tab Install, Interactive Terminal, Compare Slider, GitHub Stars ---
+  const themeBtn = $("themeToggle");
+  function applyTheme(t) {
+    document.documentElement.setAttribute("data-theme", t);
+    if (themeBtn) themeBtn.textContent = t === "dark" ? "Light" : "Dark";
+    try { localStorage.setItem("lulckit-theme", t); } catch (_) {}
+  }
+  let savedTheme = "light";
+  try { savedTheme = localStorage.getItem("lulckit-theme") || "light"; } catch (_) {}
+  applyTheme(savedTheme);
+  if (themeBtn) {
+    themeBtn.addEventListener("click", () => {
+      const cur = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+      applyTheme(cur === "dark" ? "light" : "dark");
+    });
+  }
+
+  document.querySelectorAll(".install-tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".install-tab").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      $("installCmd").textContent = btn.dataset.cmd || "";
+    });
+  });
+
+  const TERM_SCENARIOS = {
+    inspect: {
+      cmd: "lulc inspect examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026.tif",
+      html: `<span class="t-prompt">$</span> <span class="t-cmd">lulc inspect examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026.tif</span>
+<span class="t-dim">───────────── TIFF Profile: Bogura_Boro_Map_10m_2026.tif ─────────────</span>
+  Size               2.56 MB (GTiff, LZW, COG overviews=[2,4,8,16,32])
+  Dimensions         <span class="t-cyan">7,937 × 6,470 px</span> (51,352,390 px), 1 band (uint8)
+  CRS / GSD          <span class="t-cyan">EPSG:32645 (WGS 84 / UTM zone 45N)</span> · 10.000 m/px
+  Valid Area         <span class="t-green">513,523.9000 ha</span> (5,135.239 km²)
+  WGS84 Centroid     [89.3576176, 24.830086]
+  Detected Profile   <span class="t-green">categorical-classified</span> → model: <span class="t-amber">categorical</span>`,
+    },
+    map: {
+      cmd: 'lulc map Bogura_Boro_Map_10m_2026.tif -o ./out/bogura --title "Boro Area Mapping for Bogura - 2026" --palette arcgis-crop --page-size a4 --html',
+      html: `<span class="t-prompt">$</span> <span class="t-cmd">lulc map Bogura_Boro_Map_10m_2026.tif -o ./out/bogura --palette arcgis-crop --page-size a4 --html</span>
+Running categorical (56 tiles) ━━━━━━━━━━━━━━━━━━━━━━ 56/56 0:00:01
+  <span class="t-green">✔ Styled GeoTIFF</span>     out/bogura/Bogura_Boro_Map_10m_2026_lulc.tif (palette + overviews)
+  <span class="t-green">✔ A4 Print Map</span>       out/bogura/Bogura_Boro_Map_10m_2026_preview.png (300 DPI)
+  <span class="t-green">✔ Interactive HTML</span>   out/bogura/Bogura_Boro_Map_10m_2026_map.html (MapLibre GL JS)
+
+  ID   Class Name                    Share     Area (ha)
+  <span class="t-dim">0</span>    Non Boro                      79.42%    407,858.54 ha
+  <span class="t-green">1</span>    Early/Normal Boro Rice         1.69%      8,661.46 ha
+  <span class="t-amber">2</span>    Late-Transplanted Boro Rice   18.89%     97,003.90 ha`,
+    },
+    bands: {
+      cmd: "lulc bands sentinel2.tif --index ndvi -o ./out/ndvi.tif --preview-out ./out/ndvi.png",
+      html: `<span class="t-prompt">$</span> <span class="t-cmd">lulc bands sentinel2.tif --index ndvi -o ./out/ndvi.tif --preview-out ./out/ndvi.png</span>
+<span class="t-dim">Streaming 1024×1024 windows · (NIR - Red) / (NIR + Red)</span>
+  <span class="t-green">Computed NDVI</span> → ./out/ndvi.tif (float32, DEFLATE)
+  Valid pixels: 100.0% | min=-0.412 | max=0.894 | mean=0.386
+  <span class="t-cyan">Rendered A4 Print Map</span> → ./out/ndvi.png (RdYlGn colorbar + UTM grid)`,
+    },
+    clip: {
+      cmd: "lulc clip Bogura_Boro_Map_10m_2026.tif bogura_district.geojson -o bogura_clip.tif",
+      html: `<span class="t-prompt">$</span> <span class="t-cmd">lulc clip Bogura_Boro_Map_10m_2026.tif bogura_district.geojson -o bogura_clip.tif</span>
+  Input Size     7,937 × 6,470 px (EPSG:32645)
+  Clipped Size   5,214 × 4,890 px (1 band, GDAL ColorTable preserved)
+  <span class="t-green">✔ Saved clipped GeoTIFF</span> → bogura_clip.tif`,
+    },
+  };
+
+  let activeTermKey = "inspect";
+  function renderTerminal(key) {
+    activeTermKey = key in TERM_SCENARIOS ? key : "inspect";
+    const out = $("termOutput");
+    if (out) out.innerHTML = TERM_SCENARIOS[activeTermKey].html;
+  }
+  renderTerminal("inspect");
+
+  document.querySelectorAll(".term-tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".term-tab").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderTerminal(btn.dataset.term);
+    });
+  });
+
+  const copyTermBtn = $("copyTermBtn");
+  if (copyTermBtn) {
+    copyTermBtn.addEventListener("click", async () => {
+      const cmd = TERM_SCENARIOS[activeTermKey]?.cmd || "";
+      if (navigator.clipboard) await navigator.clipboard.writeText(cmd);
+      copyTermBtn.textContent = "Copied!";
+      setTimeout(() => (copyTermBtn.textContent = "Copy cmd"), 1500);
+    });
+  }
+
+  const compareRange = $("compareRange");
+  const compareBefore = $("compareBefore");
+  const compareDivider = $("compareDivider");
+  if (compareRange && compareBefore && compareDivider) {
+    const updateSplit = () => {
+      const pct = Number(compareRange.value);
+      compareBefore.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
+      compareDivider.style.left = `${pct}%`;
+    };
+    compareRange.addEventListener("input", updateSplit);
+    updateSplit();
+  }
+
+  const ghStars = $("ghStars");
+  if (ghStars && typeof AbortController !== "undefined") {
+    const ac = new AbortController();
+    setTimeout(() => ac.abort(), 3500);
+    fetch("https://api.github.com/repos/madeshchkma/LULCkit", { signal: ac.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && typeof data.stargazers_count === "number") {
+          ghStars.textContent = `GitHub ★ ${data.stargazers_count}`;
+        }
+      })
+      .catch(() => {});
+  }
 })();

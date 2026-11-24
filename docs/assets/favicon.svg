@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#07131f" />
+      <stop offset="100%" stop-color="#0f2936" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bgGrad)" />
+  <rect x="1" y="1" width="62" height="62" rx="13" stroke="#1e4959" stroke-width="1.5" />
+  <!-- Bottom raster layer -->
+  <polygon points="32,37 52,46 32,55 12,46" fill="#0f766e" opacity="0.72" stroke="#5eead4" stroke-width="1" />
+  <!-- Middle raster layer -->
+  <polygon points="32,29 52,38 32,47 12,38" fill="#1d4ed8" opacity="0.65" stroke="#93c5fd" stroke-width="1" />
+  <!-- Top LULC 4-quadrant mosaic tile -->
+  <!-- North quadrant: Emerald Forest -->
+  <polygon points="32,12 42,16.5 32,21 22,16.5" fill="#22c55e" stroke="#07131f" stroke-width="1.2" />
+  <!-- West quadrant: Sky Water -->
+  <polygon points="22,16.5 32,21 22,25.5 12,21" fill="#38bdf8" stroke="#07131f" stroke-width="1.2" />
+  <!-- East quadrant: Amber/Orange Built-up -->
+  <polygon points="42,16.5 52,21 42,25.5 32,21" fill="#f97316" stroke="#07131f" stroke-width="1.2" />
+  <!-- South quadrant: Lime Cropland -->
+  <polygon points="32,21 42,25.5 32,30 22,25.5" fill="#84cc16" stroke="#07131f" stroke-width="1.2" />
+  <!-- Outer top diamond highlight -->
+  <polygon points="32,12 52,21 32,30 12,21" fill="none" stroke="#f8fafc" stroke-width="1.2" opacity="0.9" />
+  <!-- Crisp north vertex indicator -->
+  <polygon points="32,6 35.5,11.5 32,10.2 28.5,11.5" fill="#34d399" />
+</svg>

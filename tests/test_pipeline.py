@@ -792,6 +792,7 @@ def test_spaces_handlers_and_pages_assets(tmp_path: Path) -> None:
     """Verify GitHub Pages assets exist and Spaces handlers run end-to-end offline."""
     import importlib.util
     import shutil
+    import xml.etree.ElementTree as ET
 
     root = Path(__file__).resolve().parent.parent
     required = [
@@ -799,6 +800,8 @@ def test_spaces_handlers_and_pages_assets(tmp_path: Path) -> None:
         root / "docs" / "index.html",
         root / "docs" / "app.js",
         root / "docs" / "styles.css",
+        root / "docs" / "assets" / "logo.svg",
+        root / "docs" / "assets" / "favicon.svg",
         root / ".github" / "workflows" / "pages.yml",
         root / "spaces" / "app.py",
         root / "spaces" / "requirements.txt",
@@ -806,6 +809,8 @@ def test_spaces_handlers_and_pages_assets(tmp_path: Path) -> None:
     ]
     for path in required:
         assert path.is_file(), f"Missing web/deploy file: {path}"
+    for svg_path in (root / "docs" / "assets" / "logo.svg", root / "docs" / "assets" / "favicon.svg"):
+        ET.fromstring(svg_path.read_text(encoding="utf-8"))
 
     spec = importlib.util.spec_from_file_location("lulckit_spaces_app", root / "spaces" / "app.py")
     assert spec is not None and spec.loader is not None

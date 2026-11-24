@@ -1,3 +1,9 @@
+<p align="center">
+  <a href="https://madeshchkma.github.io/LULCkit/">
+    <img src="docs/assets/logo.svg" alt="LULCkit — GeoTIFF Cartography &amp; LULC Engine" width="320" />
+  </a>
+</p>
+
 # LULCkit
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
