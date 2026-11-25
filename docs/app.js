@@ -1328,8 +1328,16 @@ Running categorical (56 tiles) ━━━━━━━━━━━━━━━━�
   const videoPlayOverlay = $("videoPlayOverlay");
   const chapterBtns = Array.from(document.querySelectorAll(".chapter-btn"));
   if (promoVideo && videoPlayerBox) {
+    // Keep clean poster + custom play pill unobstructed until playback begins
+    promoVideo.controls = false;
+
+    const enableControls = () => {
+      promoVideo.controls = true;
+    };
     const syncOverlay = () => {
-      videoPlayerBox.classList.toggle("is-playing", !promoVideo.paused && !promoVideo.ended);
+      const playing = !promoVideo.paused && !promoVideo.ended;
+      videoPlayerBox.classList.toggle("is-playing", playing);
+      if (playing) enableControls();
     };
     const syncActiveChapter = () => {
       if (!chapterBtns.length) return;
@@ -1343,17 +1351,20 @@ Running categorical (56 tiles) ━━━━━━━━━━━━━━━━�
 
     if (videoPlayOverlay) {
       videoPlayOverlay.addEventListener("click", () => {
+        enableControls();
         promoVideo.play().catch(() => {});
       });
     }
     promoVideo.addEventListener("play", syncOverlay);
     promoVideo.addEventListener("ended", () => {
       videoPlayerBox.classList.remove("is-playing");
+      promoVideo.controls = false;
     });
     promoVideo.addEventListener("timeupdate", syncActiveChapter);
 
     chapterBtns.forEach((btn) => {
       btn.addEventListener("click", () => {
+        enableControls();
         const target = Number(btn.dataset.seek || 0);
         promoVideo.currentTime = target;
         chapterBtns.forEach((b) => b.classList.toggle("active", b === btn));
