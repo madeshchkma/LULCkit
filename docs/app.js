@@ -1322,18 +1322,4 @@ Running categorical (56 tiles) ━━━━━━━━━━━━━━━━�
     compareRange.addEventListener("input", updateSplit);
     updateSplit();
   }
-
-  const ghStars = $("ghStars");
-  if (ghStars && typeof AbortController !== "undefined") {
-    const ac = new AbortController();
-    setTimeout(() => ac.abort(), 3500);
-    fetch("https://api.github.com/repos/madeshchkma/LULCkit", { signal: ac.signal })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data && typeof data.stargazers_count === "number") {
-          ghStars.textContent = `GitHub ★ ${data.stargazers_count}`;
-        }
-      })
-      .catch(() => {});
-  }
 })();

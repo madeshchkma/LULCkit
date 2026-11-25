@@ -1,0 +1,16 @@
+{
+  "name": "LULCkit — GeoTIFF to LULC Map Studio",
+  "short_name": "LULCkit",
+  "description": "Free open-source GeoTIFF cartography, spectral index calculator, and Land Use / Land Cover mapping toolkit.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#07131f",
+  "theme_color": "#07131f",
+  "icons": [
+    {
+      "src": "assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -802,6 +802,11 @@ def test_spaces_handlers_and_pages_assets(tmp_path: Path) -> None:
         root / "docs" / "styles.css",
         root / "docs" / "assets" / "logo.svg",
         root / "docs" / "assets" / "favicon.svg",
+        root / "docs" / "assets" / "og-card.png",
+        root / "docs" / "robots.txt",
+        root / "docs" / "sitemap.xml",
+        root / "docs" / "site.webmanifest",
+        root / "docs" / "llms.txt",
         root / ".github" / "workflows" / "pages.yml",
         root / "spaces" / "app.py",
         root / "spaces" / "requirements.txt",
@@ -809,8 +814,13 @@ def test_spaces_handlers_and_pages_assets(tmp_path: Path) -> None:
     ]
     for path in required:
         assert path.is_file(), f"Missing web/deploy file: {path}"
-    for svg_path in (root / "docs" / "assets" / "logo.svg", root / "docs" / "assets" / "favicon.svg"):
-        ET.fromstring(svg_path.read_text(encoding="utf-8"))
+    for xml_path in (
+        root / "docs" / "assets" / "logo.svg",
+        root / "docs" / "assets" / "favicon.svg",
+        root / "docs" / "sitemap.xml",
+    ):
+        ET.fromstring(xml_path.read_text(encoding="utf-8"))
+    json.loads((root / "docs" / "site.webmanifest").read_text(encoding="utf-8"))
 
     spec = importlib.util.spec_from_file_location("lulckit_spaces_app", root / "spaces" / "app.py")
     assert spec is not None and spec.loader is not None

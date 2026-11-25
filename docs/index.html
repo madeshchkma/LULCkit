@@ -3,20 +3,132 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LULCkit — Open-Source GeoTIFF Cartography &amp; LULC Engine</title>
-  <meta name="description" content="Turn any optical or pre-classified GeoTIFF into publication LULC maps, spectral indices, interactive web maps, and area analytics via CLI, Browser Studio, or Cloud ZeroGPU." />
+  <title>LULCkit — Free GeoTIFF to LULC Map Studio, Spectral Index &amp; GIS CLI</title>
+  <meta name="description" content="Free open-source GeoTIFF cartography toolkit. Turn satellite or categorical GeoTIFFs into publication A4/A5 LULC maps, NDVI/NDWI spectral indices, MapLibre web maps, and area reports in your browser, CLI, or ZeroGPU cloud." />
+  <meta name="keywords" content="GeoTIFF to LULC, LULC map generator, browser GeoTIFF viewer, spectral index NDVI NDWI calculator, Python GIS CLI, Dynamic World Sentinel-2, SegFormer land cover, QGIS alternative, MapLibre GeoTIFF" />
+  <meta name="author" content="MADESH CHAKMA" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+  <meta name="theme-color" content="#07131f" />
+  <link rel="canonical" href="https://madeshchkma.github.io/LULCkit/" />
+  <link rel="manifest" href="site.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="LULCkit" />
+  <meta property="og:title" content="LULCkit — Free GeoTIFF to LULC Map Studio &amp; GIS CLI" />
+  <meta property="og:description" content="Turn any GeoTIFF into publication A4/A5 LULC print maps, NDVI/NDWI indices, MapLibre web maps, and area reports — 100% client-side in your browser, CLI, or Hugging Face ZeroGPU." />
+  <meta property="og:url" content="https://madeshchkma.github.io/LULCkit/" />
+  <meta property="og:image" content="https://madeshchkma.github.io/LULCkit/assets/og-card.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="LULCkit GeoTIFF Cartography and Bogura Boro 10m LULC map preview card" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="LULCkit — Free GeoTIFF to LULC Map Studio &amp; GIS CLI" />
+  <meta name="twitter:description" content="Free MIT toolkit for GeoTIFF LULC classification, categorical styling, spectral indices, and publication print maps." />
+  <meta name="twitter:image" content="https://madeshchkma.github.io/LULCkit/assets/og-card.png" />
+  <meta name="twitter:image:alt" content="LULCkit GeoTIFF Cartography preview card" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="styles.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "name": "LULCkit",
+        "url": "https://madeshchkma.github.io/LULCkit/",
+        "description": "Open-source GeoTIFF cartography, Land Use / Land Cover classification, spectral index, and area analytics toolkit."
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "LULCkit",
+        "applicationCategory": "DeveloperApplication",
+        "applicationSubCategory": "GIS / Remote Sensing Software",
+        "operatingSystem": "Windows, macOS, Linux, Web Browser",
+        "softwareVersion": "0.1.0",
+        "license": "https://opensource.org/licenses/MIT",
+        "url": "https://madeshchkma.github.io/LULCkit/",
+        "codeRepository": "https://github.com/madeshchkma/LULCkit",
+        "screenshot": "https://madeshchkma.github.io/LULCkit/assets/og-card.png",
+        "author": {
+          "@type": "Person",
+          "name": "MADESH CHAKMA",
+          "url": "https://github.com/madeshchkma"
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "featureList": [
+          "Client-side Browser GeoTIFF inspection, categorical palette styling, and print canvas export",
+          "Pretrained Sentinel-2 Dynamic World and SegFormer RGB Land Use / Land Cover models",
+          "NDVI, NDWI, NDBI, SAVI, and EVI spectral index streaming",
+          "Publication A4/A5/A3/Letter print cartography with X/Y coordinate grids, compass arrows, and ArcGIS scale bars",
+          "Self-contained interactive MapLibre GL JS HTML map export"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Does Browser GeoTIFF Studio upload my TIFF files to a server?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Browser GeoTIFF Studio runs 100% locally inside your web browser using geotiff.js, proj4, HTML5 Canvas, and MapLibre GL JS, so your raster files never leave your computer."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What raster types and sensors does LULCkit support?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "LULCkit auto-detects and processes 9 to 13 band Sentinel-2 scenes (Dynamic World), high-resolution RGB aerial or satellite GeoTIFFs (SegFormer-B4 OpenEarthMap and SegFormer-B0 DeepGlobe), and single-band pre-classified discrete GeoTIFFs."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which export formats and map layouts are included?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "LULCkit exports styled uint8 GeoTIFFs with embedded GDAL colormaps and overviews, full-page A4, A5, A3, Letter, Legal, and Square print maps in PNG, PDF, or SVG at 300 DPI, interactive MapLibre GL JS HTML viewers, GeoJSON polygons, CSV area summaries, and JSON metadata reports."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does LULCkit calculate Land Use / Land Cover areas accurately?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "For projected coordinate systems such as UTM, LULCkit computes exact metric pixel areas from the affine transform; for geographic WGS84 (EPSG:4326) rasters, it computes per-row ellipsoidal geodesic pixel areas using pyproj.Geod."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "When should I use the Browser Studio vs. the Python CLI or Hugging Face Space?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Use Browser Studio for instant private styling, spectral indices, and area calculation without installation; use the Hugging Face ZeroGPU Space for browser-based PyTorch ML inference; and use the Python CLI for multi-gigabyte O(1)-RAM rasters, vector GeoJSON polygons, PDF/SVG print export, and directory batching."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <header class="navbar">
     <div class="container navbar-inner">
       <a class="brand-link" href="#">
-        <img class="brand-icon" src="assets/favicon.svg" alt="LULCkit logo" />
+        <img class="brand-icon" src="assets/favicon.svg" alt="LULCkit logo" width="34" height="34" />
         <span class="brand-wordmark">LULC<span>kit</span></span>
         <span class="version-pill">v0.1.0</span>
       </a>
@@ -26,12 +138,13 @@
         <a href="#capabilities">Capabilities</a>
         <a href="#examples">Examples</a>
         <a href="#runtimes">CLI &amp; Cloud</a>
+        <a href="#faq">FAQ</a>
       </nav>
 
       <div class="nav-actions">
-        <a class="icon-btn" href="https://github.com/madeshchkma/LULCkit" target="_blank" rel="noopener">
+        <a class="icon-btn" href="https://github.com/madeshchkma/LULCkit" target="_blank" rel="noopener" title="Star madeshchkma/LULCkit on GitHub">
           <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
-          <span id="ghStars">GitHub</span>
+          <span>Star on GitHub</span>
         </a>
         <button class="icon-btn" id="themeToggle" type="button" aria-label="Toggle color theme">Dark</button>
         <a class="btn btn-primary btn-nav-cta" href="#studio">Open Studio</a>
@@ -39,6 +152,7 @@
     </div>
   </header>
 
+  <main id="main-content">
   <section class="hero">
     <svg class="hero-topo" viewBox="0 0 1440 520" preserveAspectRatio="none" aria-hidden="true">
       <g stroke="#5eead4" stroke-width="1.1" fill="none">
@@ -55,7 +169,7 @@
           <span class="pill pill-oss">Free &amp; Open Source · MIT</span>
           <span class="pill pill-runtime">CLI · Browser Studio · ZeroGPU</span>
         </div>
-        <h1>GeoTIFF Cartography Without Compromise.</h1>
+        <h1>GeoTIFF to LULC Cartography Without Compromise.</h1>
         <p class="hero-sub">
           Turn any optical or pre-classified TIFF/GeoTIFF into publication-ready A4/A5 LULC print maps,
           spectral indices, interactive MapLibre viewers, and exact area reports — from your terminal,
@@ -356,13 +470,19 @@
             <img
               src="demo/Bogura_Boro_Map_10m_2026_preview.png"
               onerror="this.onerror=null;this.src='../examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_preview.png';"
-              alt="LULCkit A4 output print map for Bogura Boro 2026"
+              alt="Styled LULCkit A4 land use land cover print map of Bogura District 2026 with UTM axes, compass rose, and ArcGIS scale bar"
+              width="1400"
+              height="990"
+              loading="lazy"
             />
             <div class="compare-before" id="compareBefore">
               <img
                 src="demo/Bogura_Boro_Map_10m_2026_input_preview.png"
                 onerror="this.onerror=null;this.src='../examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026_input_preview.png';"
-                alt="Raw unstyled 1-band Bogura GeoTIFF input"
+                alt="Raw unstyled single-band Bogura 10m GeoTIFF raster before LULCkit styling"
+                width="1400"
+                height="1141"
+                loading="lazy"
               />
             </div>
             <div class="compare-divider" id="compareDivider">
@@ -459,6 +579,39 @@
     </div>
   </section>
 
+  <section id="faq" class="section section-alt">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <span class="eyebrow">Frequently Asked Questions</span>
+          <h2>Common Questions About LULCkit</h2>
+        </div>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>Does Browser GeoTIFF Studio upload my TIFF files to a server?</summary>
+          <p>No. Browser GeoTIFF Studio runs 100% locally inside your web browser using geotiff.js, proj4, HTML5 Canvas, and MapLibre GL JS, so your raster files never leave your computer.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What raster types and sensors does LULCkit support?</summary>
+          <p>LULCkit auto-detects and processes 9 to 13 band Sentinel-2 scenes (Dynamic World), high-resolution RGB aerial or satellite GeoTIFFs (SegFormer-B4 OpenEarthMap and SegFormer-B0 DeepGlobe), and single-band pre-classified discrete GeoTIFFs.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Which export formats and map layouts are included?</summary>
+          <p>LULCkit exports styled uint8 GeoTIFFs with embedded GDAL colormaps and overviews, full-page A4, A5, A3, Letter, Legal, and Square print maps in PNG, PDF, or SVG at 300 DPI, interactive MapLibre GL JS HTML viewers, GeoJSON polygons, CSV area summaries, and JSON metadata reports.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How does LULCkit calculate Land Use / Land Cover areas accurately?</summary>
+          <p>For projected coordinate systems such as UTM, LULCkit computes exact metric pixel areas from the affine transform; for geographic WGS84 (EPSG:4326) rasters, it computes per-row ellipsoidal geodesic pixel areas using pyproj.Geod.</p>
+        </details>
+        <details class="faq-item">
+          <summary>When should I use the Browser Studio vs. the Python CLI or Hugging Face Space?</summary>
+          <p>Use Browser Studio for instant private styling, spectral indices, and area calculation without installation; use the Hugging Face ZeroGPU Space for browser-based PyTorch ML inference; and use the Python CLI for multi-gigabyte O(1)-RAM rasters, vector GeoJSON polygons, PDF/SVG print export, and directory batching.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
   <section class="oss-banner">
     <div class="container oss-banner-inner">
       <div>
@@ -471,13 +624,14 @@
       </div>
     </div>
   </section>
+  </main>
 
   <footer class="footer">
     <div class="container">
       <div class="footer-grid">
         <div>
           <a class="brand-link" href="#">
-            <img class="brand-icon" src="assets/favicon.svg" alt="LULCkit logo" />
+            <img class="brand-icon" src="assets/favicon.svg" alt="LULCkit logo" width="34" height="34" loading="lazy" />
             <span class="brand-wordmark">LULC<span>kit</span></span>
           </a>
           <p style="margin:12px 0 0;font-size:13.5px;max-width:290px;">
@@ -520,6 +674,7 @@
             <li><a href="https://github.com/madeshchkma/LULCkit/issues" target="_blank" rel="noopener">Issue Tracker</a></li>
             <li><a href="https://github.com/madeshchkma/LULCkit/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing</a></li>
             <li><a href="https://github.com/madeshchkma/LULCkit/blob/main/CODE_OF_CONDUCT.md" target="_blank" rel="noopener">Code of Conduct</a></li>
+            <li><a href="#faq">FAQ</a></li>
           </ul>
         </div>
       </div>
@@ -531,9 +686,9 @@
     </div>
   </footer>
 
-  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
-  <script src="app.js"></script>
+  <script defer src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
+  <script defer src="app.js"></script>
 </body>
 </html>
