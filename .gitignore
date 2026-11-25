@@ -1,6 +1,8 @@
 # Sample / scratch outputs
 out/
 tmp/
+firebase-debug.log
+.firebase/
 *.tif
 *.tiff
 *.gpkg

@@ -1190,6 +1190,7 @@
   $("downloadPngBtn").addEventListener("click", () => {
     const stem = (state.fileName || "lulckit").replace(/\.(tiff?|tif)$/i, "");
     canvas.toBlob((blob) => blob && downloadBlob(blob, `${stem}_preview.png`), "image/png");
+    window.dispatchEvent(new CustomEvent("lulckit:export", { detail: { format: "png" } }));
   });
 
   $("downloadCsvBtn").addEventListener("click", () => {
@@ -1207,6 +1208,7 @@
       csv = `file_name,width,height,bands\n"${state.fileName}",${state.width},${state.height},${state.bandsCount}\n`;
     }
     downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `${stem}_summary.csv`);
+    window.dispatchEvent(new CustomEvent("lulckit:export", { detail: { format: "csv" } }));
   });
 
   $("downloadJsonBtn").addEventListener("click", () => {
@@ -1215,6 +1217,7 @@
       new Blob([JSON.stringify(state.lastReport, null, 2)], { type: "application/json" }),
       `${stem}_report.json`
     );
+    window.dispatchEvent(new CustomEvent("lulckit:export", { detail: { format: "json" } }));
   });
 
   // --- Website UI Polish: Theme Toggle, Multi-Tab Install, Interactive Terminal, Compare Slider, GitHub Stars ---

@@ -157,6 +157,9 @@
           <span>Star on GitHub</span>
         </a>
         <button class="icon-btn" id="themeToggle" type="button" aria-label="Toggle color theme">Dark</button>
+        <button class="icon-btn nav-auth-btn" id="authOpenBtn" type="button" aria-label="Sign in to LULCkit">
+          <span class="nav-auth-label">Sign In</span>
+        </button>
         <a class="btn btn-primary btn-nav-cta" href="#studio">Open Studio</a>
       </div>
     </div>
@@ -367,6 +370,12 @@
               <input id="gridCheck" type="checkbox" checked />
               Show X/Y Coordinate Axes &amp; Gridlines
             </label>
+          </div>
+
+          <div class="ctrl-group" id="studioPresetBar">
+            <h3>Account &amp; Synced Presets</h3>
+            <button class="btn btn-sm studio-preset-btn" id="studioPresetActionBtn" type="button">Sign In to Sync Presets</button>
+            <p class="studio-preset-hint" id="studioPresetHint">Optional: save palettes &amp; profile across devices</p>
           </div>
         </aside>
 
@@ -799,9 +808,100 @@
     </div>
   </footer>
 
+  <dialog class="auth-dialog" id="authModal" aria-labelledby="authModalTitle">
+    <div class="auth-dialog-head">
+      <h3 id="authModalTitle">Sign In to LULCkit</h3>
+      <button class="auth-close-btn" id="authCloseBtn" type="button" aria-label="Close sign-in modal">&times;</button>
+    </div>
+    <div class="auth-dialog-body">
+      <div class="oauth-stack">
+        <button class="oauth-btn" id="googleSignInBtn" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5c-.3 1.5-1.1 2.8-2.4 3.6v3h3.8c2.2-2.1 3.6-5.1 3.6-8.7z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.8-3c-1.1.7-2.5 1.2-4.2 1.2-3.2 0-6-2.2-7-5.1H1.1v3.1C3.1 21.3 7.2 24 12 24z"/><path fill="#FBBC05" d="M5 14.2c-.3-.7-.4-1.5-.4-2.2s.1-1.5.4-2.2V6.7H1.1C.4 8.2 0 10 0 12s.4 3.8 1.1 5.3l3.9-3.1z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4C17.9 1.2 15.2 0 12 0 7.2 0 3.1 2.7 1.1 6.7l3.9 3.1c1-2.9 3.8-5 7-5z"/></svg>
+          <span>Continue with Google</span>
+        </button>
+        <button class="oauth-btn" id="githubSignInBtn" type="button">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          <span>Continue with GitHub</span>
+        </button>
+      </div>
+
+      <div class="auth-divider">or email</div>
+
+      <div class="auth-tabs" role="tablist" aria-label="Email authentication mode">
+        <button class="auth-tab active" type="button" data-auth-tab="signin">Sign In</button>
+        <button class="auth-tab" type="button" data-auth-tab="signup">Create Account</button>
+      </div>
+
+      <form class="auth-form" id="emailAuthForm">
+        <div class="hidden" id="authNameRow">
+          <label for="authFullName">Full Name</label>
+          <input id="authFullName" type="text" maxlength="100" autocomplete="name" placeholder="Jane Doe" />
+        </div>
+        <div>
+          <label for="authEmail">Email Address</label>
+          <input id="authEmail" type="email" maxlength="200" autocomplete="email" placeholder="you@organization.org" required />
+        </div>
+        <div>
+          <label for="authPassword">Password</label>
+          <input id="authPassword" type="password" minlength="6" autocomplete="current-password" placeholder="Minimum 6 characters" required />
+        </div>
+        <div id="authMsg" class="auth-msg hidden" role="status"></div>
+        <div class="auth-form-foot">
+          <button class="auth-link-btn" id="forgotPwBtn" type="button">Forgot password?</button>
+          <button class="btn btn-primary btn-sm" id="emailSubmitBtn" type="submit">Sign In with Email</button>
+        </div>
+      </form>
+
+      <p class="auth-privacy-note">Optional account sync only. Your GeoTIFF rasters always stay 100% private in your browser.</p>
+    </div>
+  </dialog>
+
+  <dialog class="auth-dialog" id="profileModal" aria-labelledby="profileModalTitle">
+    <div class="auth-dialog-head">
+      <h3 id="profileModalTitle">Account &amp; Synced Presets</h3>
+      <button class="auth-close-btn" id="profileCloseBtn" type="button" aria-label="Close profile modal">&times;</button>
+    </div>
+    <div class="auth-dialog-body">
+      <div class="profile-summary" id="profileSummary"></div>
+
+      <form class="auth-form" id="profileForm">
+        <div>
+          <label for="profName">Display Name</label>
+          <input id="profName" type="text" maxlength="100" placeholder="Your full name" />
+        </div>
+        <div class="field-row">
+          <div>
+            <label for="profOrg">Organization</label>
+            <input id="profOrg" type="text" maxlength="120" placeholder="University / Agency" />
+          </div>
+          <div>
+            <label for="profRole">Role</label>
+            <input id="profRole" type="text" maxlength="60" placeholder="GIS Analyst / Researcher" />
+          </div>
+        </div>
+        <div class="auth-form-foot">
+          <button class="btn btn-sm" id="signOutBtn" type="button">Sign Out</button>
+          <button class="btn btn-primary btn-sm" type="submit">Save Profile</button>
+        </div>
+      </form>
+
+      <div class="preset-section-head">
+        <h4>Saved Studio Presets</h4>
+        <div class="preset-save-row">
+          <input id="presetNameInput" type="text" maxlength="60" placeholder="Preset name (e.g. Boro A4)" />
+          <button class="btn btn-sm btn-primary" id="savePresetBtn" type="button">Save Current</button>
+        </div>
+        <div class="preset-list" id="presetList"></div>
+      </div>
+
+      <div id="profileMsg" class="auth-msg hidden" role="status"></div>
+    </div>
+  </dialog>
+
   <script defer src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
   <script defer src="app.js"></script>
+  <script type="module" src="auth.js"></script>
 </body>
 </html>

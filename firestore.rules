@@ -1,0 +1,154 @@
+rules_version = '2';
+
+// ============================================================================
+// Assumed Data Model (LULCkit Web Application — Standard Edition, (default))
+// ============================================================================
+//
+// Only ONE collection is exposed:
+//
+// Collection: users
+// Document ID: {uid} (must match authenticated Firebase Auth request.auth.uid)
+// Fields:
+//   - email: string (required on create & update, <= 200 chars; empty/fallback allowed for private GitHub OAuth emails)
+//   - displayName: string (optional, <= 100 chars)
+//   - photoURL: string (optional, <= 500 chars; empty string or http(s) URL)
+//   - provider: string (optional, <= 40 chars)
+//   - organization: string (optional, <= 120 chars)
+//   - role: string (optional, <= 60 chars; self-reported profile job title only, NEVER used for authorization/RBAC)
+//   - exportsCount: int (optional, 0..1000000; monotonic non-decreasing and bounded +100 per update)
+//   - savedPresets: list (optional, <= 20 items; Browser GeoTIFF Studio presets)
+//   - createdAt: timestamp (required on create & update; strictly immutable after create)
+//   - lastSeenAt: timestamp (required on create & update)
+//
+// Access Patterns:
+//   - Users may only get, create, and update their own /users/{uid} document.
+//   - Collection listing (users enumeration) and document deletion are strictly forbidden.
+//   - All other collections and nested subcollections are denied by default.
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny everywhere (including all unlisted collections and subcollections)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ========================================================================
+    // Helper Functions
+    // ========================================================================
+
+    // Check if the caller is signed in via Firebase Auth
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if the authenticated caller owns the target user document
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // Validate that the resulting document contains only allowed schema fields
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Validate that all required fields exist in the resulting document
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // Validate optional string field presence, type, and length bounds
+    function isValidOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+             (request.resource.data[field] is string &&
+              request.resource.data[field].size() >= minLen &&
+              request.resource.data[field].size() <= maxLen);
+    }
+
+    // Validate HTTP/HTTPS URL format
+    function isValidUrl(url) {
+      return url is string &&
+             (url.matches('^https://.*') || url.matches('^http://.*'));
+    }
+
+    // Validate optional photoURL (allows empty string or http/https URL <= 500 chars)
+    function isValidOptionalPhotoUrl() {
+      return !('photoURL' in request.resource.data) ||
+             (request.resource.data.photoURL is string &&
+              request.resource.data.photoURL.size() <= 500 &&
+              (request.resource.data.photoURL == '' || isValidUrl(request.resource.data.photoURL)));
+    }
+
+    // Validate list type and max item count
+    function isValidList(listVal, maxSize) {
+      return listVal is list && listVal.size() <= maxSize;
+    }
+
+    // ========================================================================
+    // Domain Validators (/users/{uid})
+    // ========================================================================
+
+    // Shared schema validation called on BOTH create and update
+    function isValidUserDoc(data) {
+      return hasOnlyAllowedFields([
+               'email', 'displayName', 'photoURL', 'provider',
+               'organization', 'role', 'exportsCount', 'savedPresets',
+               'createdAt', 'lastSeenAt'
+             ]) &&
+             hasRequiredFields(['email', 'createdAt', 'lastSeenAt']) &&
+             data.email is string && data.email.size() <= 200 &&
+             isValidOptionalString('displayName', 0, 100) &&
+             isValidOptionalPhotoUrl() &&
+             isValidOptionalString('provider', 0, 40) &&
+             isValidOptionalString('organization', 0, 120) &&
+             isValidOptionalString('role', 0, 60) &&
+             (!('exportsCount' in data) ||
+              (data.exportsCount is int &&
+               data.exportsCount >= 0 &&
+               data.exportsCount <= 1000000)) &&
+             (!('savedPresets' in data) || isValidList(data.savedPresets, 20)) &&
+             data.createdAt is timestamp &&
+             data.lastSeenAt is timestamp;
+    }
+
+    // Enforce monotonic, bounded increments (+0 to +100 per write) and prevent counter deletion
+    function isValidExportsCountOnUpdate() {
+      let incoming = request.resource.data;
+      let existing = resource.data;
+      return (!('exportsCount' in existing) && !('exportsCount' in incoming)) ||
+             (!('exportsCount' in existing) && ('exportsCount' in incoming) &&
+              incoming.exportsCount is int &&
+              incoming.exportsCount >= 0 &&
+              incoming.exportsCount <= 100) ||
+             (('exportsCount' in existing) && ('exportsCount' in incoming) &&
+              existing.exportsCount is int &&
+              incoming.exportsCount is int &&
+              incoming.exportsCount >= existing.exportsCount &&
+              incoming.exportsCount <= existing.exportsCount + 100 &&
+              incoming.exportsCount <= 1000000);
+    }
+
+    function isValidUserDocCreate() {
+      return isValidUserDoc(request.resource.data);
+    }
+
+    function isValidUserDocUpdate() {
+      return isValidUserDoc(request.resource.data) &&
+             request.resource.data.createdAt == resource.data.createdAt &&
+             isValidExportsCountOnUpdate();
+    }
+
+    // ========================================================================
+    // Collection Rules
+    // ========================================================================
+
+    match /users/{uid} {
+      allow get: if isOwner(uid);
+      allow list: if false;
+      allow create: if isOwner(uid) && isValidUserDocCreate();
+      allow update: if isOwner(uid) && isValidUserDocUpdate();
+      allow delete: if false;
+    }
+  }
+}

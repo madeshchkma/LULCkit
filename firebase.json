@@ -1,0 +1,20 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "LULCkit",
+        "supportEmail": "madeshchakma@gmail.com",
+        "authorizedRedirectUris": [
+          "https://lulckit-web.firebaseapp.com/__/auth/handler",
+          "https://madeshchkma.github.io/LULCkit/",
+          "http://localhost"
+        ]
+      }
+    }
+  }
+}
