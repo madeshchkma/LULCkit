@@ -71,7 +71,7 @@ uv pip install -e ".[dev]"
 Build the installable plugin archive or install it directly into your local QGIS profile:
 
 ```bash
-python scripts/build_qgis_plugin.py            # writes out/lulckit_qgis_v0.1.0.zip
+python scripts/build_qgis_plugin.py            # writes out/lulckit_qgis_v0.1.1.zip
 python scripts/build_qgis_plugin.py --install  # copies lulckit_qgis/ to your QGIS plugins folder
 ```
 

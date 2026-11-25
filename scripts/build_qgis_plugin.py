@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import configparser
 import os
 import shutil
 import zipfile
@@ -10,8 +11,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_SRC = ROOT / "qgis_plugin" / "lulckit_qgis"
-DEFAULT_OUT = ROOT / "out" / "lulckit_qgis_v0.1.0.zip"
 SKIP_NAMES = {"__pycache__", ".DS_Store"}
+
+
+def plugin_version() -> str:
+    """Read plugin version from ``qgis_plugin/lulckit_qgis/metadata.txt``."""
+    cfg = configparser.ConfigParser()
+    cfg.read(PLUGIN_SRC / "metadata.txt", encoding="utf-8")
+    return cfg["general"]["version"].strip()
+
+
+DEFAULT_OUT = ROOT / "out" / f"lulckit_qgis_v{plugin_version()}.zip"
 
 
 def build_plugin_zip(output_zip: Path = DEFAULT_OUT) -> Path:

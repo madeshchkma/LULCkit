@@ -28,9 +28,9 @@ Found under **Processing Toolbox → LULCkit** (or **Plugins → LULCkit**):
    ```powershell
    python scripts/build_qgis_plugin.py
    ```
-   This generates `out/lulckit_qgis_v0.1.0.zip`.
+   This generates `out/lulckit_qgis_v0.1.1.zip`.
 2. In QGIS, open **Plugins → Manage and Install Plugins… → Install from ZIP**.
-3. Select `out/lulckit_qgis_v0.1.0.zip` and click **Install Plugin**.
+3. Select `out/lulckit_qgis_v0.1.1.zip` and click **Install Plugin**.
 4. Enable **LULCkit** in the Installed Plugins list.
 
 ### Option B — Direct Local Profile Install (for Contributors)

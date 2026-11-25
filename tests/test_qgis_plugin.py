@@ -108,8 +108,9 @@ def test_qgis_metadata_and_icon() -> None:
     assert sec["qgisMinimumVersion"] == "3.22"
     assert sec["supportsQt6"] == "True"
     assert sec["hasProcessingProvider"] == "yes"
-    assert sec["version"] == "0.1.0"
+    assert sec["version"] == "0.1.1"
     assert sec["icon"] == "icon.png"
+    assert "assert " not in (PLUGIN_PKG_DIR / "runner.py").read_text(encoding="utf-8")
 
     with Image.open(icon_path) as im:
         assert im.size == (64, 64)
@@ -444,7 +445,7 @@ def test_build_qgis_plugin_zip(tmp_path: Path) -> None:
     finally:
         sys.path.pop(0)
 
-    zip_path = build_qgis_plugin.build_plugin_zip(tmp_path / "lulckit_qgis_v0.1.0.zip")
+    zip_path = build_qgis_plugin.build_plugin_zip(tmp_path / f"lulckit_qgis_v{build_qgis_plugin.plugin_version()}.zip")
     assert zip_path.is_file()
     with zipfile.ZipFile(zip_path) as zf:
         names = set(zf.namelist())

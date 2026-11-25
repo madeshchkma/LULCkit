@@ -6,7 +6,7 @@ import importlib.util
 import os
 import re
 import shutil
-import subprocess
+import subprocess  # nosec B404
 import sys
 from pathlib import Path
 from typing import Callable
@@ -50,7 +50,7 @@ def _probe_python_has_lulckit(py_exe: Path) -> bool:
     if sibling_cli.is_file():
         return True
     try:
-        res = subprocess.run(
+        res = subprocess.run(  # nosec B603
             [str(py_exe), "-c", "import lulckit"],
             capture_output=True,
             text=True,
@@ -123,7 +123,7 @@ def run_lulckit(
     if feedback is not None and hasattr(feedback, "pushInfo"):
         feedback.pushInfo(f"Running: {' '.join(cmd)}")
 
-    proc = subprocess.Popen(
+    proc = subprocess.Popen(  # nosec B603
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -135,7 +135,8 @@ def run_lulckit(
     )
 
     output_lines: list[str] = []
-    assert proc.stdout is not None
+    if proc.stdout is None:
+        raise RuntimeError("LULCkit process stdout pipe was not created.")
     try:
         for raw_line in proc.stdout:
             if feedback is not None and hasattr(feedback, "isCanceled") and feedback.isCanceled():
@@ -167,7 +168,7 @@ def probe_lulckit_version(configured_path: str | None = None) -> tuple[bool, str
     if base_cmd is None:
         return False, "Not configured / not found on PATH"
     try:
-        res = subprocess.run(
+        res = subprocess.run(  # nosec B603
             [*base_cmd, "--help"],
             capture_output=True,
             text=True,
@@ -197,7 +198,7 @@ def install_into_user_venv(
     venv_py = _venv_python(venv_dir)
     if not venv_py.is_file():
         log(f"Creating virtual environment at {venv_dir} ...")
-        subprocess.run(
+        subprocess.run(  # nosec B603
             [host_py, "-m", "venv", str(venv_dir)],
             check=True,
             capture_output=True,
@@ -206,7 +207,7 @@ def install_into_user_venv(
         )
 
     log(f"Installing lulckit into {venv_dir} ...")
-    subprocess.run(
+    subprocess.run(  # nosec B603
         [str(venv_py), "-m", "pip", "install", "--upgrade", "pip", LULCKIT_PACKAGE_URL],
         check=True,
         capture_output=True,
