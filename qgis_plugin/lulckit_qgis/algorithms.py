@@ -53,6 +53,31 @@ COMPOSITE_OPTIONS = ["true-color", "false-color-nir", "agriculture", "swir"]
 INDEX_CMAP_OPTIONS = ["", "RdYlGn", "Blues", "RdBu", "viridis", "gray"]
 
 
+def _resolve_enum(cls: Any, group: str, member: str) -> Any:
+    """Resolve PyQGIS scoped Qt6 enum first, falling back to Qt5 unscoped attribute."""
+    scoped = getattr(cls, group, None)
+    if scoped is not None and hasattr(scoped, member):
+        return getattr(scoped, member)
+    return getattr(cls, member)
+
+
+def _resolve_polygon_geometry() -> Any:
+    import qgis.core as qc
+
+    qgis_cls = getattr(qc, "Qgis", None)
+    if qgis_cls is not None:
+        geom_type = getattr(qgis_cls, "GeometryType", None)
+        if geom_type is not None and hasattr(geom_type, "Polygon"):
+            return geom_type.Polygon
+    return _resolve_enum(QgsWkbTypes, "GeometryType", "PolygonGeometry")
+
+
+_FLAG_ADVANCED = _resolve_enum(QgsProcessingParameterDefinition, "Flag", "FlagAdvanced")
+_TYPE_VECTOR_POLYGON = _resolve_enum(QgsProcessing, "SourceType", "TypeVectorPolygon")
+_POLYGON_GEOMETRY = _resolve_polygon_geometry()
+_NUMBER_INTEGER = _resolve_enum(QgsProcessingParameterNumber, "Type", "Integer")
+
+
 def _tr(text: str) -> str:
     return QCoreApplication.translate("LULCkit", text)
 
@@ -71,7 +96,7 @@ def _get_configured_executable() -> str | None:
 
 
 def _mark_advanced(param: QgsProcessingParameterDefinition) -> QgsProcessingParameterDefinition:
-    param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+    param.setFlags(param.flags() | _FLAG_ADVANCED)
     return param
 
 
@@ -110,7 +135,7 @@ def _export_vector_source_to_geojson(source, context, stem: str) -> Path:
         geom_copy = geom.__class__(geom)
         if xform is not None:
             geom_copy.transform(xform)
-        if geom_copy.type() != QgsWkbTypes.PolygonGeometry:
+        if geom_copy.type() != _POLYGON_GEOMETRY:
             continue
         geojson_geom = json.loads(geom_copy.asJson())
         props = {}
@@ -203,7 +228,7 @@ class LulckitMapAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.BOUNDARY,
                 _tr("Optional Boundary Overlay (Polygons)"),
-                types=[QgsProcessing.TypeVectorPolygon],
+                types=[_TYPE_VECTOR_POLYGON],
                 optional=True,
             )
         )
@@ -403,7 +428,7 @@ class LulckitBandsAlgorithm(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterNumber(
-                self.SINGLE_BAND, _tr("Band Number (when Mode = Single Band)"), type=QgsProcessingParameterNumber.Integer, defaultValue=1, minValue=1
+                self.SINGLE_BAND, _tr("Band Number (when Mode = Single Band)"), type=_NUMBER_INTEGER, defaultValue=1, minValue=1
             )
         )
         self.addParameter(
@@ -544,7 +569,7 @@ class LulckitClipAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT_RASTER, _tr("Input GeoTIFF / TIFF")))
         self.addParameter(
             QgsProcessingParameterFeatureSource(
-                self.BOUNDARY, _tr("Clipping Polygon Layer"), types=[QgsProcessing.TypeVectorPolygon]
+                self.BOUNDARY, _tr("Clipping Polygon Layer"), types=[_TYPE_VECTOR_POLYGON]
             )
         )
         self.addParameter(QgsProcessingParameterBoolean(self.CROP, _tr("Crop Raster Extent to Polygon Bounds"), defaultValue=True))

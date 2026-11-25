@@ -92,8 +92,13 @@ def _write_sample_rasters(tmp_path: Path) -> tuple[Path, Path, Path]:
 def test_qgis_metadata_and_icon() -> None:
     meta_path = PLUGIN_PKG_DIR / "metadata.txt"
     icon_path = PLUGIN_PKG_DIR / "icon.png"
+    license_path = PLUGIN_PKG_DIR / "LICENSE"
     assert meta_path.is_file()
     assert icon_path.is_file()
+    assert license_path.is_file()
+    license_text = license_path.read_text(encoding="utf-8", errors="replace")
+    assert "GNU GENERAL PUBLIC LICENSE" in license_text
+    assert "Version 2" in license_text
 
     cfg = configparser.ConfigParser()
     cfg.read(meta_path, encoding="utf-8")
@@ -118,6 +123,8 @@ def test_runner_cli_end_to_end(tmp_path: Path) -> None:
         sys.path.pop(0)
 
     assert runner.strip_ansi("\x1b[32mOK\x1b[0m\r\n") == "OK\n"
+    assert runner.LULCKIT_PACKAGE_URL.startswith("https://")
+    assert not runner.LULCKIT_PACKAGE_URL.startswith("git+")
     resolved = runner.resolve_lulckit_command(sys.executable)
     assert resolved == [sys.executable, "-m", "lulckit"]
 
@@ -191,12 +198,10 @@ def test_runner_cli_end_to_end(tmp_path: Path) -> None:
         assert (map_dir / f"sample{suffix}").is_file(), f"Missing output sample{suffix}"
 
 
-def test_qgis_provider_algorithms_and_plugin_stub(monkeypatch: pytest.MonkeyPatch) -> None:
+def _verify_plugin_with_qgis_stubs(monkeypatch: pytest.MonkeyPatch, *, strict_qt6: bool) -> None:
     """Verify QGIS provider/algorithm/plugin registration using lightweight PyQGIS stubs."""
 
     class _DummyBase:
-        FlagAdvanced = 1
-
         def __init__(self, *args, **kwargs) -> None:
             self.args = args
             self.kwargs = kwargs
@@ -221,6 +226,11 @@ def test_qgis_provider_algorithms_and_plugin_stub(monkeypatch: pytest.MonkeyPatc
 
         def refreshAlgorithms(self) -> None:
             self.loadAlgorithms()
+
+    if strict_qt6:
+        _DummyBase.Flag = types.SimpleNamespace(FlagAdvanced=1)
+    else:
+        _DummyBase.FlagAdvanced = 1
 
     class _Registry:
         def __init__(self) -> None:
@@ -282,29 +292,45 @@ def test_qgis_provider_algorithms_and_plugin_stub(monkeypatch: pytest.MonkeyPatc
     qgis_mod = types.ModuleType("qgis")
     qgis_core = types.ModuleType("qgis.core")
     qgis_core.QgsApplication = types.SimpleNamespace(processingRegistry=lambda: reg)
-    qgis_core.QgsProcessing = types.SimpleNamespace(TypeVectorPolygon=2)
+    qgis_core.QgsProcessing = (
+        types.SimpleNamespace(SourceType=types.SimpleNamespace(TypeVectorPolygon=2))
+        if strict_qt6
+        else types.SimpleNamespace(TypeVectorPolygon=2)
+    )
     qgis_core.QgsProcessingAlgorithm = _DummyBase
     qgis_core.QgsProcessingProvider = _DummyBase
     qgis_core.QgsProcessingContext = types.SimpleNamespace(LayerDetails=_DummyBase)
     qgis_core.QgsProcessingException = RuntimeError
     qgis_core.QgsProcessingParameterDefinition = _DummyBase
+
+    class _ParamNumber(_DummyBase):
+        pass
+
+    if strict_qt6:
+        _ParamNumber.Type = types.SimpleNamespace(Integer=0)
+    else:
+        _ParamNumber.Integer = 0
+
     for cname in (
         "QgsProcessingParameterBoolean",
         "QgsProcessingParameterEnum",
         "QgsProcessingParameterFeatureSource",
         "QgsProcessingParameterFileDestination",
         "QgsProcessingParameterFolderDestination",
-        "QgsProcessingParameterNumber",
         "QgsProcessingParameterRasterDestination",
         "QgsProcessingParameterRasterLayer",
         "QgsProcessingParameterString",
     ):
         setattr(qgis_core, cname, _DummyBase)
-    qgis_core.QgsProcessingParameterNumber.Integer = 0
+    qgis_core.QgsProcessingParameterNumber = _ParamNumber
     qgis_core.QgsProcessingUtils = _DummyBase
     qgis_core.QgsCoordinateReferenceSystem = _DummyBase
     qgis_core.QgsCoordinateTransform = _DummyBase
-    qgis_core.QgsWkbTypes = types.SimpleNamespace(PolygonGeometry=2)
+    qgis_core.QgsWkbTypes = (
+        types.SimpleNamespace(GeometryType=types.SimpleNamespace(PolygonGeometry=2))
+        if strict_qt6
+        else types.SimpleNamespace(PolygonGeometry=2)
+    )
 
     pyqt = types.ModuleType("qgis.PyQt")
     qtcore = types.ModuleType("qgis.PyQt.QtCore")
@@ -401,6 +427,16 @@ def test_qgis_provider_algorithms_and_plugin_stub(monkeypatch: pytest.MonkeyPatc
     assert len(reg.providers) == 0
 
 
+def test_qgis_provider_algorithms_and_plugin_stub(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify QGIS provider/algorithm/plugin registration using Qt5 PyQGIS stubs."""
+    _verify_plugin_with_qgis_stubs(monkeypatch, strict_qt6=False)
+
+
+def test_qgis_qt6_strict_enums(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify algorithms import and initialize cleanly with Qt6 scoped PyQGIS enums only."""
+    _verify_plugin_with_qgis_stubs(monkeypatch, strict_qt6=True)
+
+
 def test_build_qgis_plugin_zip(tmp_path: Path) -> None:
     sys.path.insert(0, str(ROOT / "scripts"))
     try:
@@ -413,6 +449,7 @@ def test_build_qgis_plugin_zip(tmp_path: Path) -> None:
     with zipfile.ZipFile(zip_path) as zf:
         names = set(zf.namelist())
     for req in (
+        "lulckit_qgis/LICENSE",
         "lulckit_qgis/metadata.txt",
         "lulckit_qgis/__init__.py",
         "lulckit_qgis/plugin.py",

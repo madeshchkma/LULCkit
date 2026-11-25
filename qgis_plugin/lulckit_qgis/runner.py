@@ -13,7 +13,7 @@ from typing import Callable
 
 SETTING_KEY = "LULCKIT_EXECUTABLE"
 DEFAULT_VENV_DIR = Path.home() / ".lulckit-qgis-venv"
-LULCKIT_GIT_URL = "git+https://github.com/madeshchkma/LULCkit.git"
+LULCKIT_PACKAGE_URL = "https://github.com/madeshchkma/LULCkit/archive/refs/heads/main.zip"
 
 _ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]|\r")
 _CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
@@ -207,7 +207,7 @@ def install_into_user_venv(
 
     log(f"Installing lulckit into {venv_dir} ...")
     subprocess.run(
-        [str(venv_py), "-m", "pip", "install", "--upgrade", "pip", LULCKIT_GIT_URL],
+        [str(venv_py), "-m", "pip", "install", "--upgrade", "pip", LULCKIT_PACKAGE_URL],
         check=True,
         capture_output=True,
         text=True,
