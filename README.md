@@ -18,6 +18,7 @@
 
 > - **Browser GeoTIFF Studio (GitHub Pages):** https://madeshchkma.github.io/LULCkit/
 > - **Cloud ML App (Hugging Face Spaces — ZeroGPU):** https://huggingface.co/spaces/madeshchakma/LULCkit
+> - **QGIS Plugin (3.22+ / Qt6):** [qgis_plugin/README.md](qgis_plugin/README.md) (`Plugins → LULCkit` + Processing Toolbox)
 
 ---
 
@@ -64,6 +65,17 @@ uv pip install -e ".[dev]"
 ```
 
 > **Note:** Installing registers both `lulckit` and `lulc` CLI commands. Pretrained model weights (`rgb-oem`, `rgb-fast`, `s2-dw`) are downloaded once on first use and cached locally (`~/.cache/lulckit/` and `~/.cache/huggingface/`), after which inference runs 100% offline.
+
+### QGIS Plugin Install (QGIS 3.22+ / Qt6)
+
+Build the installable plugin archive or install it directly into your local QGIS profile:
+
+```bash
+python scripts/build_qgis_plugin.py            # writes out/lulckit_qgis_v0.1.0.zip
+python scripts/build_qgis_plugin.py --install  # copies lulckit_qgis/ to your QGIS plugins folder
+```
+
+See [qgis_plugin/README.md](qgis_plugin/README.md) for Processing Toolbox usage (`LULCkit`) and environment configuration.
 
 ---
 

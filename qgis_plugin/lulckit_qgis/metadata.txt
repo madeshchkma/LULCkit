@@ -1,0 +1,20 @@
+[general]
+name=LULCkit
+qgisMinimumVersion=3.22
+qgisMaximumVersion=4.99
+supportsQt6=True
+description=Automated GeoTIFF to LULC classification, spectral indices, and publication cartography in QGIS.
+about=LULCkit integrates O(1)-RAM GeoTIFF sensor fingerprinting, pretrained Sentinel-2 (Dynamic World) and RGB (OpenEarthMap / DeepGlobe) land cover segmentation, categorical palette styling, spectral index calculation (NDVI, NDWI, NDBI, SAVI, EVI), publication print maps, MapLibre HTML export, and polygon clipping natively into the QGIS Processing Toolbox.
+version=0.1.0
+author=MADESH CHAKMA
+email=madeshchakma@gmail.com
+category=Raster
+hasProcessingProvider=yes
+icon=icon.png
+homepage=https://madeshchkma.github.io/LULCkit/
+repository=https://github.com/madeshchkma/LULCkit
+tracker=https://github.com/madeshchkma/LULCkit/issues
+tags=lulc,land cover,geotiff,remote sensing,ndvi,cartography,sentinel-2,classification,maplibre
+experimental=False
+deprecated=False
+changelog=0.1.0 - Initial QGIS Processing Provider release with LULC map, spectral indices/bands, inspect, and vector clip tools.
