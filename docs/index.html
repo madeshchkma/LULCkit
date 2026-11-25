@@ -118,6 +118,15 @@
             }
           }
         ]
+      },
+      {
+        "@type": "VideoObject",
+        "name": "LULCkit — GeoTIFF to LULC Map Studio, CLI & ZeroGPU Product Tour",
+        "description": "68-second guided walkthrough showing how LULCkit turns raw satellite and categorical GeoTIFFs into 300 DPI A4 print maps, spectral indices (NDVI/NDWI), MapLibre web viewers, and exact area reports in your browser, CLI, and Hugging Face ZeroGPU.",
+        "thumbnailUrl": "https://madeshchkma.github.io/LULCkit/assets/promo-poster.jpg",
+        "contentUrl": "https://madeshchkma.github.io/LULCkit/assets/lulckit-promo.mp4",
+        "uploadDate": "2026-11-25",
+        "duration": "PT1M9S"
       }
     ]
   }
@@ -135,6 +144,7 @@
 
       <nav class="nav-links" aria-label="Primary navigation">
         <a href="#studio">Browser Studio</a>
+        <a href="#demo-video">Video Tour</a>
         <a href="#capabilities">Capabilities</a>
         <a href="#examples">Examples</a>
         <a href="#runtimes">CLI &amp; Cloud</a>
@@ -178,6 +188,7 @@
 
         <div class="hero-ctas">
           <a class="btn btn-primary" href="#studio">Try Browser Studio</a>
+          <a class="btn btn-ghost-dark" id="heroWatchBtn" href="#demo-video">&#9654; Watch 60s Tour</a>
           <a class="btn btn-ghost-dark" href="https://huggingface.co/spaces/madeshchakma/LULCkit" target="_blank" rel="noopener">Launch Cloud ML (ZeroGPU)</a>
           <a class="btn btn-ghost-dark" href="demo/Bogura_Boro_Map_10m_2026_map.html" target="_blank" rel="noopener">Bogura Web Map</a>
         </div>
@@ -399,6 +410,108 @@
           <div class="meta-grid" id="metaGrid"></div>
           <div class="table-wrap" id="analyticsWrap"></div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="demo-video" class="section video-showcase">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <span class="eyebrow">Product Walkthrough</span>
+          <h2>See LULCkit in Action (68s Guided Tour)</h2>
+          <p class="section-sub">Watch how a raw 10m GeoTIFF becomes a private Browser Studio print sheet, spectral index layer, interactive MapLibre viewer, and CLI / ZeroGPU workflow.</p>
+        </div>
+        <a class="btn btn-sm btn-ghost-dark" href="assets/lulckit-promo.mp4" download="LULCkit_Promo.mp4">Download MP4</a>
+      </div>
+
+      <div class="video-showcase-grid">
+        <div class="video-frame">
+          <div class="video-topbar">
+            <div class="traffic-lights" aria-hidden="true">
+              <span class="dot-red"></span>
+              <span class="dot-amber"></span>
+              <span class="dot-green"></span>
+            </div>
+            <span class="video-topbar-title">LULCkit v0.1.0 — Guided Video Tour</span>
+            <span class="video-spec-pill">HD 720p · Audio + Captions</span>
+          </div>
+          <div class="video-player-box" id="videoPlayerBox">
+            <video
+              id="promoVideo"
+              controls
+              playsinline
+              preload="metadata"
+              poster="assets/promo-poster.jpg"
+              aria-label="LULCkit 68-second guided walkthrough video"
+            >
+              <source src="assets/lulckit-promo.mp4" type="video/mp4" />
+              <track kind="captions" src="assets/lulckit-promo.vtt" srclang="en" label="English" />
+              Your browser does not support HTML5 video.
+            </video>
+            <button class="video-play-overlay" id="videoPlayOverlay" type="button" aria-label="Play LULCkit walkthrough video">
+              <span class="play-ring" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+              </span>
+              <span class="play-label">Play Guided Tour · 1:08</span>
+            </button>
+          </div>
+        </div>
+
+        <aside class="video-chapters" aria-label="Video chapters">
+          <div class="video-chapters-head">
+            <h4>Jump to Chapter</h4>
+            <span>Synced with playback</span>
+          </div>
+          <div class="chapter-list">
+            <button class="chapter-btn active" type="button" data-seek="0">
+              <span class="chapter-time">0:00</span>
+              <span class="chapter-meta">
+                <strong>Meet LULCkit</strong>
+                <small>GeoTIFF to LULC without multi-tool friction</small>
+              </span>
+            </button>
+            <button class="chapter-btn" type="button" data-seek="7.8">
+              <span class="chapter-time">0:08</span>
+              <span class="chapter-meta">
+                <strong>Browser GeoTIFF Studio</strong>
+                <small>100% private client-side print layouts</small>
+              </span>
+            </button>
+            <button class="chapter-btn" type="button" data-seek="15.7">
+              <span class="chapter-time">0:16</span>
+              <span class="chapter-meta">
+                <strong>Desktop &amp; Mobile</strong>
+                <small>Inspect, style palettes &amp; export anywhere</small>
+              </span>
+            </button>
+            <button class="chapter-btn" type="button" data-seek="24.9">
+              <span class="chapter-time">0:25</span>
+              <span class="chapter-meta">
+                <strong>ML &amp; Spectral Indices</strong>
+                <small>Sentinel-2, RGB, NDVI/NDWI &amp; 300 DPI A4</small>
+              </span>
+            </button>
+            <button class="chapter-btn" type="button" data-seek="35.1">
+              <span class="chapter-time">0:35</span>
+              <span class="chapter-meta">
+                <strong>Before → After Wipe</strong>
+                <small>Raw Bogura 10m TIFF to MapLibre viewer</small>
+              </span>
+            </button>
+            <button class="chapter-btn" type="button" data-seek="43.3">
+              <span class="chapter-time">0:43</span>
+              <span class="chapter-meta">
+                <strong>CLI, ZeroGPU &amp; Area</strong>
+                <small>Offline CLI, Cloud GPU &amp; 513,524 ha stats</small>
+              </span>
+            </button>
+          </div>
+          <div class="video-chapters-foot">
+            <a class="btn btn-primary btn-sm" href="#studio">Try Browser Studio ↑</a>
+            <a class="btn btn-ghost-dark btn-sm" href="https://github.com/madeshchkma/LULCkit" target="_blank" rel="noopener">Star on GitHub</a>
+          </div>
+        </aside>
       </div>
     </div>
   </section>

@@ -1322,4 +1322,44 @@ Running categorical (56 tiles) ━━━━━━━━━━━━━━━━�
     compareRange.addEventListener("input", updateSplit);
     updateSplit();
   }
+
+  const promoVideo = $("promoVideo");
+  const videoPlayerBox = $("videoPlayerBox");
+  const videoPlayOverlay = $("videoPlayOverlay");
+  const chapterBtns = Array.from(document.querySelectorAll(".chapter-btn"));
+  if (promoVideo && videoPlayerBox) {
+    const syncOverlay = () => {
+      videoPlayerBox.classList.toggle("is-playing", !promoVideo.paused && !promoVideo.ended);
+    };
+    const syncActiveChapter = () => {
+      if (!chapterBtns.length) return;
+      const now = promoVideo.currentTime || 0;
+      let activeBtn = chapterBtns[0];
+      for (const btn of chapterBtns) {
+        if (Number(btn.dataset.seek || 0) <= now + 0.25) activeBtn = btn;
+      }
+      chapterBtns.forEach((b) => b.classList.toggle("active", b === activeBtn));
+    };
+
+    if (videoPlayOverlay) {
+      videoPlayOverlay.addEventListener("click", () => {
+        promoVideo.play().catch(() => {});
+      });
+    }
+    promoVideo.addEventListener("play", syncOverlay);
+    promoVideo.addEventListener("ended", () => {
+      videoPlayerBox.classList.remove("is-playing");
+    });
+    promoVideo.addEventListener("timeupdate", syncActiveChapter);
+
+    chapterBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = Number(btn.dataset.seek || 0);
+        promoVideo.currentTime = target;
+        chapterBtns.forEach((b) => b.classList.toggle("active", b === btn));
+        promoVideo.play().catch(() => {});
+      });
+    });
+    syncActiveChapter();
+  }
 })();
