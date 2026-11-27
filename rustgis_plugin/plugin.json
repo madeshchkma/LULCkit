@@ -1,0 +1,292 @@
+{
+  "id": "lulckit",
+  "name": "LULCkit",
+  "version": "0.1.0",
+  "description": "Turn any optical or pre-classified GeoTIFF into LULC maps, spectral indices (NDVI, NDWI, NDBI, SAVI, EVI), clipped rasters, area reports, and print cartography.",
+  "author": "Madesh Chakma",
+  "homepage": "https://github.com/madeshchkma/LULCkit",
+  "license": "MIT",
+  "runtime": "process",
+  "python": {
+    "version": "3.12",
+    "requirements": "requirements.txt"
+  },
+  "run": ["python", "main.py"],
+  "minRustgisVersion": "0.8.0",
+  "permissions": ["files"],
+  "commands": [
+    {
+      "id": "models-info",
+      "label": "Models &\nStyles",
+      "help": "Show available LULCkit models, local cache status, palettes, and spectral indices.",
+      "icon": "stats",
+      "params": "{}"
+    },
+    {
+      "id": "about",
+      "label": "About\nLULCkit",
+      "help": "Show LULCkit version, license, and documentation link.",
+      "icon": "info",
+      "params": "{}"
+    }
+  ],
+  "tools": [
+    {
+      "id": "lulc-map",
+      "name": "LULC Map & Classification",
+      "summary": "Classify or style a GeoTIFF into an LULC map with area analytics, vector GeoJSON, print map, and optional HTML viewer.",
+      "toolbox": "LULCkit",
+      "params": [
+        {
+          "name": "input",
+          "label": "Input GeoTIFF",
+          "kind": "file",
+          "mode": "path",
+          "required": true,
+          "extensions": ["tif", "tiff"]
+        },
+        {
+          "name": "model",
+          "label": "Model",
+          "kind": "choice",
+          "choices": ["auto", "categorical", "rgb-oem", "rgb-fast", "s2-dw"],
+          "default": "auto"
+        },
+        {
+          "name": "palette",
+          "label": "Palette",
+          "kind": "choice",
+          "choices": ["default", "arcgis-crop", "vivid", "earth", "pastel", "colorblind", "viridis", "RdYlGn"],
+          "default": "default"
+        },
+        {
+          "name": "title",
+          "label": "Map title",
+          "kind": "text",
+          "default": ""
+        },
+        {
+          "name": "classLabels",
+          "label": "Class labels",
+          "help": "Optional id:Label pairs, e.g. 0:Non Boro,1:Boro Rice",
+          "kind": "text",
+          "default": ""
+        },
+        {
+          "name": "classColors",
+          "label": "Class colors",
+          "help": "Optional id:#RRGGBB pairs, e.g. 0:#f3f4f6,1:#15803d",
+          "kind": "text",
+          "default": ""
+        },
+        {
+          "name": "pageSize",
+          "label": "Print page size",
+          "kind": "choice",
+          "choices": ["a4", "a5", "a3", "letter", "legal", "square", "auto"],
+          "default": "a4"
+        },
+        {
+          "name": "orientation",
+          "label": "Orientation",
+          "kind": "choice",
+          "choices": ["auto", "landscape", "portrait"],
+          "default": "auto"
+        },
+        {
+          "name": "arrowStyle",
+          "label": "North arrow style",
+          "kind": "choice",
+          "choices": ["compass", "classic", "fancy", "minimal", "none"],
+          "default": "compass"
+        },
+        {
+          "name": "scalebarStyle",
+          "label": "Scale bar style",
+          "kind": "choice",
+          "choices": ["arcgis", "alternating", "simple", "none"],
+          "default": "arcgis"
+        },
+        {
+          "name": "showGrid",
+          "label": "Show coordinate grid",
+          "kind": "bool",
+          "default": true
+        },
+        {
+          "name": "boundary",
+          "label": "Boundary overlay",
+          "kind": "polygonLayer",
+          "required": false
+        },
+        {
+          "name": "vectorOut",
+          "label": "Export vector GeoJSON",
+          "kind": "bool",
+          "default": true
+        },
+        {
+          "name": "htmlOut",
+          "label": "Export interactive MapLibre HTML",
+          "kind": "bool",
+          "default": false
+        },
+        {
+          "name": "device",
+          "label": "Compute device",
+          "kind": "choice",
+          "choices": ["auto", "cpu", "cuda", "mps"],
+          "default": "auto"
+        },
+        {
+          "name": "outputDir",
+          "label": "Output folder",
+          "help": "Output folder (defaults to <input_dir>/<stem>_lulckit)",
+          "kind": "text",
+          "default": ""
+        }
+      ]
+    },
+    {
+      "id": "inspect-geotiff",
+      "name": "Inspect GeoTIFF Metadata",
+      "summary": "Profile a TIFF/GeoTIFF (CRS, GSD, band stats, layout, and recommended LULCkit model).",
+      "toolbox": "LULCkit",
+      "params": [
+        {
+          "name": "input",
+          "label": "Input GeoTIFF",
+          "kind": "file",
+          "mode": "path",
+          "required": true,
+          "extensions": ["tif", "tiff"]
+        },
+        {
+          "name": "outputJson",
+          "label": "Save JSON report to",
+          "help": "Optional path to save the full JSON metadata report",
+          "kind": "text",
+          "default": ""
+        }
+      ]
+    },
+    {
+      "id": "spectral-index",
+      "name": "Bands & Spectral Indices",
+      "summary": "Compute spectral indices (NDVI, NDWI, NDBI, SAVI, EVI), band composites, custom RGBs, or single-band maps.",
+      "toolbox": "LULCkit",
+      "params": [
+        {
+          "name": "input",
+          "label": "Input GeoTIFF",
+          "kind": "file",
+          "mode": "path",
+          "required": true,
+          "extensions": ["tif", "tiff"]
+        },
+        {
+          "name": "mode",
+          "label": "Mode",
+          "kind": "choice",
+          "choices": ["index", "composite", "rgb", "band"],
+          "default": "index"
+        },
+        {
+          "name": "indexName",
+          "label": "Spectral index",
+          "kind": "choice",
+          "choices": ["ndvi", "ndwi", "ndbi", "savi", "evi"],
+          "default": "ndvi"
+        },
+        {
+          "name": "composite",
+          "label": "Composite preset",
+          "kind": "choice",
+          "choices": ["true-color", "false-color-nir", "agriculture", "swir"],
+          "default": "true-color"
+        },
+        {
+          "name": "rgbBands",
+          "label": "Custom RGB bands",
+          "help": "Comma-separated 1-based bands for rgb mode, e.g. 4,3,2",
+          "kind": "text",
+          "default": ""
+        },
+        {
+          "name": "singleBand",
+          "label": "Single band index",
+          "kind": "number",
+          "default": 1
+        },
+        {
+          "name": "palette",
+          "label": "Colormap",
+          "kind": "choice",
+          "choices": ["auto", "RdYlGn", "Blues", "RdBu", "viridis", "gray"],
+          "default": "auto"
+        },
+        {
+          "name": "title",
+          "label": "Map title",
+          "kind": "text",
+          "default": ""
+        },
+        {
+          "name": "outputDir",
+          "label": "Output folder",
+          "help": "Output folder (defaults to <input_dir>/<stem>_lulckit)",
+          "kind": "text",
+          "default": ""
+        }
+      ]
+    },
+    {
+      "id": "clip-raster",
+      "name": "Clip GeoTIFF to Polygon",
+      "summary": "Clip a georeferenced GeoTIFF to a polygon layer, preserving colormaps and metadata tags.",
+      "toolbox": "LULCkit",
+      "params": [
+        {
+          "name": "input",
+          "label": "Input GeoTIFF",
+          "kind": "file",
+          "mode": "path",
+          "required": true,
+          "extensions": ["tif", "tiff"]
+        },
+        {
+          "name": "boundary",
+          "label": "Clip boundary",
+          "kind": "polygonLayer",
+          "required": true
+        },
+        {
+          "name": "crop",
+          "label": "Crop extent to boundary",
+          "kind": "bool",
+          "default": true
+        },
+        {
+          "name": "outputPath",
+          "label": "Output GeoTIFF path",
+          "help": "Output GeoTIFF path (defaults to <input_dir>/<stem>_clipped.tif)",
+          "kind": "text",
+          "default": ""
+        }
+      ]
+    }
+  ],
+  "tab": {
+    "label": "LULCkit",
+    "groups": [
+      {
+        "label": "LULC & Raster",
+        "items": ["tool:lulc-map", "tool:inspect-geotiff", "tool:spectral-index", "tool:clip-raster"]
+      },
+      {
+        "label": "Info",
+        "items": ["models-info", "about"]
+      }
+    ]
+  }
+}

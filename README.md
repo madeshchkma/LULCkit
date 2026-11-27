@@ -19,6 +19,7 @@
 > - **Browser GeoTIFF Studio (GitHub Pages):** https://madeshchkma.github.io/LULCkit/
 > - **Cloud ML App (Hugging Face Spaces — ZeroGPU):** https://huggingface.co/spaces/madeshchakma/LULCkit
 > - **QGIS Plugin (3.22+ / Qt6):** [qgis_plugin/README.md](qgis_plugin/README.md) (`Plugins → LULCkit` + Processing Toolbox)
+> - **RustGIS Plugin (0.8.0+):** [rustgis_plugin/README.md](rustgis_plugin/README.md) (`LULCkit` ribbon tab + Tools pane)
 
 ---
 
@@ -76,6 +77,17 @@ python scripts/build_qgis_plugin.py --install  # copies lulckit_qgis/ to your QG
 ```
 
 See [qgis_plugin/README.md](qgis_plugin/README.md) for Processing Toolbox usage (`LULCkit`) and environment configuration.
+
+### RustGIS Plugin Install (RustGIS 0.8.0+)
+
+Build the `.rgplugin` package or install it from the GitHub Release via **Plugins › Plugin Manager**:
+
+```bash
+python scripts/build_rustgis_plugin.py        # writes out/lulckit-0.1.0.rgplugin & out/lulckit.json
+rustgis-cli plugins install out/lulckit-0.1.0.rgplugin
+```
+
+See [rustgis_plugin/README.md](rustgis_plugin/README.md) for details on tools, ribbon commands, and managed Python environment setup.
 
 ---
 

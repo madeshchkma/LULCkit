@@ -1,0 +1,60 @@
+name: RustGIS Plugin
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "rustgis_plugin/**"
+      - "src/lulckit/**"
+      - "scripts/build_rustgis_plugin.py"
+      - "tests/test_rustgis_plugin.py"
+      - ".github/workflows/rustgis-plugin.yml"
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "rustgis_plugin/**"
+      - "src/lulckit/**"
+      - "scripts/build_rustgis_plugin.py"
+      - "tests/test_rustgis_plugin.py"
+      - ".github/workflows/rustgis-plugin.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Build & Smoke Test in rustgis-cli
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build .rgplugin package
+        run: python scripts/build_rustgis_plugin.py --check
+
+      - name: Download rustgis-cli (latest)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download --repo opengeos/RustGIS --pattern 'RustGIS-*-linux-x86_64.tar.gz' --dir "$RUNNER_TEMP"
+          tar xzf "$RUNNER_TEMP"/RustGIS-*-linux-x86_64.tar.gz -C "$RUNNER_TEMP"
+          echo "RUSTGIS_CLI=$(ls "$RUNNER_TEMP"/RustGIS-*-linux-x86_64/rustgis-cli)" >> "$GITHUB_ENV"
+
+      - name: Install and smoke-test plugin in rustgis-cli
+        run: |
+          PLUGINS_DIR="$RUNNER_TEMP/rustgis-plugins"
+          mkdir -p "$PLUGINS_DIR"
+          export RUSTGIS_PLUGINS_DIR="$PLUGINS_DIR"
+          PKG=$(ls out/lulckit-*.rgplugin)
+          "$RUSTGIS_CLI" plugins install "$PKG"
+          "$RUSTGIS_CLI" run --sample --cmd 'info.commands' | grep -q 'plugin:lulckit/models-info'
+          "$RUSTGIS_CLI" run --sample --cmd 'plugin:lulckit/models-info'
+          "$RUSTGIS_CLI" run --sample --cmd 'plugin:lulckit/about'
