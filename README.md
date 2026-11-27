@@ -80,14 +80,14 @@ See [qgis_plugin/README.md](qgis_plugin/README.md) for Processing Toolbox usage 
 
 ### RustGIS Plugin Install (RustGIS 0.8.0+)
 
-Build the `.rgplugin` package or install it from the GitHub Release via **Plugins › Plugin Manager**:
+Build the `.rgplugin` package or install it from **Plugins › Plugin Manager › Browse** (`lulckit`) or the GitHub Release:
 
 ```bash
-python scripts/build_rustgis_plugin.py        # writes out/lulckit-0.1.0.rgplugin & out/lulckit.json
-rustgis-cli plugins install out/lulckit-0.1.0.rgplugin
+python scripts/build_rustgis_plugin.py        # writes out/lulckit-0.2.0.rgplugin & out/lulckit.json
+rustgis-cli plugins install out/lulckit-0.2.0.rgplugin
 ```
 
-See [rustgis_plugin/README.md](rustgis_plugin/README.md) for details on tools, ribbon commands, and managed Python environment setup.
+See [rustgis_plugin/README.md](rustgis_plugin/README.md) for details on tools, multi-band COG export/stacking, ribbon commands, and managed Python environment setup.
 
 ---
 

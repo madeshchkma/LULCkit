@@ -1,8 +1,8 @@
 {
   "id": "lulckit",
   "name": "LULCkit",
-  "version": "0.1.0",
-  "description": "Turn any optical or pre-classified GeoTIFF into LULC maps, spectral indices (NDVI, NDWI, NDBI, SAVI, EVI), clipped rasters, area reports, and print cartography.",
+  "version": "0.2.0",
+  "description": "Turn any optical or pre-classified GeoTIFF into Cloud-Optimized LULC maps with named legends, multi-band COG exports, Sentinel-2/Landsat folder stacks, spectral indices (NDVI, NDWI, MNDWI, NDBI, SAVI, EVI, NBR), and print cartography.",
   "author": "Madesh Chakma",
   "homepage": "https://github.com/madeshchkma/LULCkit",
   "license": "MIT",
@@ -13,8 +13,46 @@
   },
   "run": ["python", "main.py"],
   "minRustgisVersion": "0.8.0",
-  "permissions": ["files"],
+  "permissions": ["edit", "files"],
   "commands": [
+    {
+      "id": "load-output-raster",
+      "label": "Load Last\nOutput",
+      "help": "Load the latest LULCkit output GeoTIFF (or a specified path) directly onto the RustGIS map.",
+      "icon": "add_data",
+      "params": "{\"path\"?: \"string\", \"name\"?: \"string\"}",
+      "form": [
+        {
+          "name": "path",
+          "label": "GeoTIFF path (blank = latest LULCkit output)",
+          "kind": "text",
+          "required": false,
+          "default": ""
+        },
+        {
+          "name": "name",
+          "label": "Layer name (optional)",
+          "kind": "text",
+          "required": false,
+          "default": ""
+        }
+      ]
+    },
+    {
+      "id": "inspect-active-raster",
+      "label": "Inspect\nLayer",
+      "help": "Profile an open RustGIS raster layer with LULCkit sensor fingerprinting and model recommendations.",
+      "icon": "info",
+      "params": "{\"layer\"?: \"string\"}",
+      "form": [
+        {
+          "name": "layer",
+          "label": "Raster layer",
+          "kind": "rasterLayer",
+          "required": false
+        }
+      ]
+    },
     {
       "id": "models-info",
       "label": "Models &\nStyles",
@@ -34,7 +72,7 @@
     {
       "id": "lulc-map",
       "name": "LULC Map & Classification",
-      "summary": "Classify or style a GeoTIFF into an LULC map with area analytics, vector GeoJSON, print map, and optional HTML viewer.",
+      "summary": "Classify or style a GeoTIFF into a Cloud-Optimized LULC GeoTIFF with named legend (.aux.xml), area analytics, vector GeoJSON, print map, and optional HTML viewer.",
       "toolbox": "LULCkit",
       "params": [
         {
@@ -43,7 +81,7 @@
           "kind": "file",
           "mode": "path",
           "required": true,
-          "extensions": ["tif", "tiff"]
+          "extensions": ["tif", "tiff", "vrt", "jp2"]
         },
         {
           "name": "model",
@@ -62,6 +100,27 @@
         {
           "name": "title",
           "label": "Map title",
+          "kind": "text",
+          "default": ""
+        },
+        {
+          "name": "rgbBands",
+          "label": "Custom RGB bands",
+          "help": "Optional 3 comma-separated 1-based bands for RGB models, e.g. 4,3,2",
+          "kind": "text",
+          "default": ""
+        },
+        {
+          "name": "s2Bands",
+          "label": "Custom Sentinel-2 bands",
+          "help": "Optional 9 comma-separated 1-based bands (B2,B3,B4,B5,B6,B7,B8,B11,B12) for s2-dw",
+          "kind": "text",
+          "default": ""
+        },
+        {
+          "name": "hfModel",
+          "label": "Custom Hugging Face model",
+          "help": "Optional Hugging Face SegFormer repo ID (overrides default RGB weights)",
           "kind": "text",
           "default": ""
         },
@@ -126,6 +185,19 @@
           "default": true
         },
         {
+          "name": "minAreaPixels",
+          "label": "Minimum polygon pixels",
+          "help": "Filter vector polygons smaller than this pixel count",
+          "kind": "number",
+          "default": 4
+        },
+        {
+          "name": "saveConfidence",
+          "label": "Save confidence GeoTIFF",
+          "kind": "bool",
+          "default": false
+        },
+        {
           "name": "htmlOut",
           "label": "Export interactive MapLibre HTML",
           "kind": "bool",
@@ -148,9 +220,9 @@
       ]
     },
     {
-      "id": "inspect-geotiff",
-      "name": "Inspect GeoTIFF Metadata",
-      "summary": "Profile a TIFF/GeoTIFF (CRS, GSD, band stats, layout, and recommended LULCkit model).",
+      "id": "export-bands",
+      "name": "Export & Split Raster Bands",
+      "summary": "Export any band subset into a multi-band COG, split bands into single-band COGs, or export a stretched 8-bit visual RGBA COG.",
       "toolbox": "LULCkit",
       "params": [
         {
@@ -159,12 +231,68 @@
           "kind": "file",
           "mode": "path",
           "required": true,
-          "extensions": ["tif", "tiff"]
+          "extensions": ["tif", "tiff", "vrt", "jp2"]
         },
         {
-          "name": "outputJson",
-          "label": "Save JSON report to",
-          "help": "Optional path to save the full JSON metadata report",
+          "name": "mode",
+          "label": "Export mode",
+          "kind": "choice",
+          "choices": ["subset-stack", "split-bands", "visual-rgb"],
+          "default": "subset-stack"
+        },
+        {
+          "name": "bands",
+          "label": "Bands (indices or names)",
+          "help": "Comma-separated 1-based indices or band names (e.g. 4,3,2,8 or B4,B3,B2,B8; blank = all non-alpha bands)",
+          "kind": "text",
+          "default": ""
+        },
+        {
+          "name": "composite",
+          "label": "Composite preset (for visual-rgb or subset)",
+          "kind": "choice",
+          "choices": ["auto", "true-color", "false-color-nir", "agriculture", "swir"],
+          "default": "auto"
+        },
+        {
+          "name": "outputPath",
+          "label": "Output GeoTIFF path (or folder for split-bands)",
+          "help": "Optional output path; defaults beside the input file",
+          "kind": "text",
+          "default": ""
+        }
+      ]
+    },
+    {
+      "id": "stack-bands",
+      "name": "Stack Band Folder (S2 / Landsat)",
+      "summary": "Align and stack per-band Sentinel-2 (.jp2/.tif) or Landsat C2 (.tif) files from a folder into one multi-band COG with wavelengths.",
+      "toolbox": "LULCkit",
+      "params": [
+        {
+          "name": "inputFolder",
+          "label": "Folder of per-band files",
+          "help": "Path to a Sentinel-2 .SAFE/granule folder or Landsat scene folder",
+          "kind": "text",
+          "required": true
+        },
+        {
+          "name": "sensor",
+          "label": "Sensor family",
+          "kind": "choice",
+          "choices": ["auto", "sentinel2", "landsat"],
+          "default": "auto"
+        },
+        {
+          "name": "cloudMask",
+          "label": "Apply cloud mask (SCL / QA_PIXEL)",
+          "kind": "bool",
+          "default": false
+        },
+        {
+          "name": "outputPath",
+          "label": "Output multi-band COG path",
+          "help": "Optional output path; defaults to <folder>/<folder_name>_stack.tif",
           "kind": "text",
           "default": ""
         }
@@ -173,7 +301,7 @@
     {
       "id": "spectral-index",
       "name": "Bands & Spectral Indices",
-      "summary": "Compute spectral indices (NDVI, NDWI, NDBI, SAVI, EVI), band composites, custom RGBs, or single-band maps.",
+      "summary": "Compute spectral indices (NDVI, NDWI, MNDWI, NDBI, SAVI, EVI, NBR), band composites, custom RGBs, or single-band maps.",
       "toolbox": "LULCkit",
       "params": [
         {
@@ -182,7 +310,7 @@
           "kind": "file",
           "mode": "path",
           "required": true,
-          "extensions": ["tif", "tiff"]
+          "extensions": ["tif", "tiff", "vrt", "jp2"]
         },
         {
           "name": "mode",
@@ -195,7 +323,7 @@
           "name": "indexName",
           "label": "Spectral index",
           "kind": "choice",
-          "choices": ["ndvi", "ndwi", "ndbi", "savi", "evi"],
+          "choices": ["ndvi", "ndwi", "mndwi", "ndbi", "savi", "evi", "nbr"],
           "default": "ndvi"
         },
         {
@@ -241,6 +369,29 @@
       ]
     },
     {
+      "id": "inspect-geotiff",
+      "name": "Inspect GeoTIFF Metadata",
+      "summary": "Profile a TIFF/GeoTIFF/VRT/JP2 (CRS, GSD, band stats, layout, and recommended LULCkit model).",
+      "toolbox": "LULCkit",
+      "params": [
+        {
+          "name": "input",
+          "label": "Input GeoTIFF",
+          "kind": "file",
+          "mode": "path",
+          "required": true,
+          "extensions": ["tif", "tiff", "vrt", "jp2"]
+        },
+        {
+          "name": "outputJson",
+          "label": "Save JSON report to",
+          "help": "Optional path to save the full JSON metadata report",
+          "kind": "text",
+          "default": ""
+        }
+      ]
+    },
+    {
       "id": "clip-raster",
       "name": "Clip GeoTIFF to Polygon",
       "summary": "Clip a georeferenced GeoTIFF to a polygon layer, preserving colormaps and metadata tags.",
@@ -252,7 +403,7 @@
           "kind": "file",
           "mode": "path",
           "required": true,
-          "extensions": ["tif", "tiff"]
+          "extensions": ["tif", "tiff", "vrt", "jp2"]
         },
         {
           "name": "boundary",
@@ -281,11 +432,18 @@
     "groups": [
       {
         "label": "LULC & Raster",
-        "items": ["tool:lulc-map", "tool:inspect-geotiff", "tool:spectral-index", "tool:clip-raster"]
+        "items": [
+          "tool:lulc-map",
+          "tool:export-bands",
+          "tool:stack-bands",
+          "tool:spectral-index",
+          "tool:inspect-geotiff",
+          "tool:clip-raster"
+        ]
       },
       {
-        "label": "Info",
-        "items": ["models-info", "about"]
+        "label": "Map & Info",
+        "items": ["load-output-raster", "inspect-active-raster", "models-info", "about"]
       }
     ]
   }

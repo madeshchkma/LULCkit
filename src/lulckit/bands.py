@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import re
 import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -12,7 +13,7 @@ import rasterio
 from rasterio.enums import Resampling
 from rasterio.errors import NotGeoreferencedWarning
 from rasterio.mask import mask as rasterio_mask
-from rasterio.warp import transform_bounds
+from rasterio.warp import reproject, transform_bounds
 from rasterio.windows import Window
 
 from lulckit import __version__
@@ -65,7 +66,94 @@ SPECTRAL_INDICES: dict[str, dict[str, Any]] = {
         "range": (-1.0, 1.0),
         "description": "Enhanced Vegetation Index",
     },
+    "nbr": {
+        "roles": ("nir", "swir2"),
+        "formula": "(NIR - SWIR2) / (NIR + SWIR2)",
+        "cmap": "RdYlGn",
+        "range": (-1.0, 1.0),
+        "description": "Normalized Burn Ratio",
+    },
+    "mndwi": {
+        "roles": ("green", "swir1"),
+        "formula": "(Green - SWIR1) / (Green + SWIR1)",
+        "cmap": "RdBu",
+        "range": (-1.0, 1.0),
+        "description": "Modified Normalized Difference Water Index (Xu)",
+    },
 }
+
+BAND_WAVELENGTH_UM: dict[str, float] = {
+    "b1": 0.443,
+    "coastal": 0.443,
+    "b2": 0.490,
+    "blue": 0.490,
+    "sr_b2": 0.482,
+    "b3": 0.560,
+    "green": 0.560,
+    "sr_b3": 0.561,
+    "b4": 0.665,
+    "red": 0.665,
+    "sr_b4": 0.655,
+    "b5": 0.705,
+    "rededge1": 0.705,
+    "sr_b5": 0.865,
+    "b6": 0.740,
+    "rededge2": 0.740,
+    "sr_b6": 1.609,
+    "b7": 0.783,
+    "rededge3": 0.783,
+    "sr_b7": 2.201,
+    "b8": 0.842,
+    "nir": 0.842,
+    "b8a": 0.865,
+    "b9": 0.945,
+    "b11": 1.610,
+    "swir1": 1.610,
+    "b12": 2.190,
+    "swir2": 2.190,
+}
+
+
+def _resolve_wavelength_um(desc: str | None) -> float | None:
+    if not desc:
+        return None
+    low = desc.strip().lower()
+    for key, um in BAND_WAVELENGTH_UM.items():
+        if re.search(rf"(?<![a-z0-9]){re.escape(key)}(?![a-z0-9])", low):
+            return um
+    return None
+
+
+def _tag_band_wavelength(dst: Any, band_idx: int, desc: str | None, fallback_um: float | None = None) -> None:
+    um = _resolve_wavelength_um(desc) or fallback_um
+    if um is not None:
+        val = f"{um:.4f}".rstrip("0").rstrip(".")
+        dst.update_tags(
+            band_idx,
+            CENTRAL_WAVELENGTH_UM=val,
+            wavelength=val,
+            wavelength_units="micrometers",
+        )
+
+
+def _cog_tile_kwargs(width: int, height: int, *, cog: bool = True) -> dict[str, Any]:
+    if cog and width >= 512 and height >= 512:
+        return {"tiled": True, "blockxsize": 512, "blockysize": 512}
+    if width >= 256 and height >= 256:
+        return {"tiled": True, "blockxsize": 256, "blockysize": 256}
+    return {"tiled": False}
+
+
+def _build_raster_overviews(dst: Any, width: int, height: int, resampling: Resampling = Resampling.average) -> None:
+    if max(width, height) <= 512:
+        return
+    factors = (
+        [2, 4, 8, 16, 32]
+        if max(width, height) > 4096
+        else ([2, 4, 8, 16] if max(width, height) > 1024 else [2, 4])
+    )
+    dst.build_overviews(factors, resampling)
+    dst.update_tags(ns="rio_overview", resampling=resampling.name)
 
 
 def list_spectral_indices() -> list[dict[str, str]]:
@@ -110,8 +198,14 @@ def _compute_index_array(
     elif index_key == "ndwi":
         a, b = bands_dict["green"], bands_dict["nir"]
         num, den = a - b, a + b
+    elif index_key == "mndwi":
+        a, b = bands_dict["green"], bands_dict["swir1"]
+        num, den = a - b, a + b
     elif index_key == "ndbi":
         a, b = bands_dict["swir1"], bands_dict["nir"]
+        num, den = a - b, a + b
+    elif index_key == "nbr":
+        a, b = bands_dict["nir"], bands_dict["swir2"]
         num, den = a - b, a + b
     elif index_key == "savi":
         nir = bands_dict["nir"] / refl_div
@@ -396,6 +490,8 @@ def export_spectral_index(
                             g_min = min(g_min, float(np.min(vals)))
                             g_max = max(g_max, float(np.max(vals)))
 
+                _build_raster_overviews(dst, src.width, src.height, Resampling.average)
+
     if valid_n > 0:
         mean_v = total_sum / valid_n
         var_v = max(0.0, (total_sq / valid_n) - (mean_v * mean_v))
@@ -520,9 +616,11 @@ def export_band_view(
                     out_meta["transform"] = src.transform
 
                 with rasterio.open(out_tif, "w", **out_meta) as dst:
+                    role_by_band = {idx: role for role, idx in (profile.spectral_band_map or {}).items()}
                     for out_idx, in_idx in enumerate(band_indices, start=1):
                         desc = profile.bands[in_idx - 1].description or f"Band_{in_idx}"
                         dst.set_band_description(out_idx, desc)
+                        _tag_band_wavelength(dst, out_idx, desc, BAND_WAVELENGTH_UM.get(role_by_band.get(in_idx, "")))
                     step = 1024
                     for row_off in range(0, src.height, step):
                         h = min(step, src.height - row_off)
@@ -535,6 +633,7 @@ def export_band_view(
                                 dst.write(np.transpose(rgb_hwc, (2, 0, 1)), window=win)
                             else:
                                 dst.write(chunk, window=win)
+                    _build_raster_overviews(dst, src.width, src.height, Resampling.average)
 
             if output_preview is not None:
                 out_h, out_w, _ = decimated_shape(src.height, src.width, max_pixels=4_000_000)
@@ -673,3 +772,354 @@ def clip_raster_to_geojson(
                 "bounds_wgs84": bounds_wgs,
                 "output_path": str(out_path),
             }
+
+
+def _resolve_band_selection(profile: TiffProfile, band_indices: list[int] | None) -> list[int]:
+    if not band_indices:
+        return list(profile.non_alpha_bands or range(1, profile.band_count + 1))
+    bad = [b for b in band_indices if b < 1 or b > profile.band_count]
+    if bad:
+        raise ValueError(f"Band index out of range [1..{profile.band_count}]: {bad}")
+    return list(band_indices)
+
+
+def export_band_subset(
+    input_path: str | Path,
+    profile: TiffProfile,
+    band_indices: list[int] | None,
+    output_tif: str | Path,
+    *,
+    cog: bool = True,
+) -> dict[str, Any]:
+    """Stream-export any subset (or all) bands into a multi-band GeoTIFF/COG preserving dtypes and wavelengths."""
+    selected = _resolve_band_selection(profile, band_indices)
+    out_path = Path(output_tif).resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    role_by_band = {idx: role for role, idx in (profile.spectral_band_map or {}).items()}
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", NotGeoreferencedWarning)
+        with rasterio.open(input_path) as src:
+            dtypes = {src.dtypes[b - 1] for b in selected}
+            out_dtype = next(iter(dtypes)) if len(dtypes) == 1 else "float32"
+            out_meta: dict[str, Any] = {
+                "driver": "GTiff",
+                "height": src.height,
+                "width": src.width,
+                "count": len(selected),
+                "dtype": out_dtype,
+                "compress": "deflate",
+                **_cog_tile_kwargs(src.width, src.height, cog=cog),
+            }
+            if src.nodatavals[selected[0] - 1] is not None:
+                out_meta["nodata"] = src.nodatavals[selected[0] - 1]
+            if src.crs is not None:
+                out_meta["crs"] = src.crs
+                out_meta["transform"] = src.transform
+
+            with rasterio.open(out_path, "w", **out_meta) as dst:
+                dst.update_tags(created_by=f"lulckit/{__version__}")
+                band_names: list[str] = []
+                for out_idx, in_idx in enumerate(selected, start=1):
+                    desc = profile.bands[in_idx - 1].description or f"Band_{in_idx}"
+                    band_names.append(desc)
+                    dst.set_band_description(out_idx, desc)
+                    _tag_band_wavelength(
+                        dst, out_idx, desc, BAND_WAVELENGTH_UM.get(role_by_band.get(in_idx, ""))
+                    )
+                step = 1024
+                for row_off in range(0, src.height, step):
+                    h = min(step, src.height - row_off)
+                    for col_off in range(0, src.width, step):
+                        w = min(step, src.width - col_off)
+                        win = Window(col_off, row_off, w, h)
+                        chunk = src.read(selected, window=win)
+                        if chunk.dtype != np.dtype(out_dtype):
+                            chunk = chunk.astype(out_dtype)
+                        dst.write(chunk, window=win)
+                if cog:
+                    _build_raster_overviews(dst, src.width, src.height, Resampling.average)
+
+            return {
+                "width": src.width,
+                "height": src.height,
+                "band_count": len(selected),
+                "bands": selected,
+                "band_names": band_names,
+                "dtype": out_dtype,
+                "crs_epsg": src.crs.to_epsg() if src.crs else None,
+                "output_path": str(out_path),
+            }
+
+
+def split_bands_to_folder(
+    input_path: str | Path,
+    profile: TiffProfile,
+    output_dir: str | Path,
+    *,
+    band_indices: list[int] | None = None,
+    cog: bool = True,
+) -> dict[str, Any]:
+    """Split a multi-band raster into individual single-band GeoTIFFs/COGs."""
+    selected = _resolve_band_selection(profile, band_indices)
+    out_dir = Path(output_dir).resolve()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stem = Path(input_path).stem
+    written: list[str] = []
+    for in_idx in selected:
+        raw_desc = profile.bands[in_idx - 1].description or f"band{in_idx}"
+        safe_desc = re.sub(r"[^A-Za-z0-9_-]+", "_", raw_desc).strip("_") or f"band{in_idx}"
+        out_tif = out_dir / f"{stem}_B{in_idx}_{safe_desc}.tif"
+        export_band_subset(input_path, profile, [in_idx], out_tif, cog=cog)
+        written.append(str(out_tif))
+    return {"count": len(written), "bands": selected, "files": written, "output_dir": str(out_dir)}
+
+
+def export_visual_rgb_cog(
+    input_path: str | Path,
+    profile: TiffProfile,
+    band_indices: list[int],
+    output_tif: str | Path,
+    *,
+    stretch: tuple[float, float] = (2.0, 98.0),
+    cog: bool = True,
+) -> dict[str, Any]:
+    """Export a percentile-stretched 8-bit RGBA visual COG with transparent nodata."""
+    if len(band_indices) != 3:
+        raise ValueError(f"visual-rgb requires 3 bands, got {len(band_indices)}: {band_indices}")
+    _resolve_band_selection(profile, band_indices)
+    out_path = Path(output_tif).resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", NotGeoreferencedWarning)
+        with rasterio.open(input_path) as src:
+            los, his = _percentile_bounds(src, band_indices, stretch, profile.alpha_band)
+            out_meta: dict[str, Any] = {
+                "driver": "GTiff",
+                "height": src.height,
+                "width": src.width,
+                "count": 4,
+                "dtype": "uint8",
+                "compress": "deflate",
+                "photometric": "RGB",
+                **_cog_tile_kwargs(src.width, src.height, cog=cog),
+            }
+            if src.crs is not None:
+                out_meta["crs"] = src.crs
+                out_meta["transform"] = src.transform
+
+            with rasterio.open(out_path, "w", **out_meta) as dst:
+                for out_idx, label in enumerate(("Red", "Green", "Blue", "Alpha"), start=1):
+                    dst.set_band_description(out_idx, label)
+                dst.update_tags(created_by=f"lulckit/{__version__}", stretch=f"{stretch[0]}..{stretch[1]}")
+                step = 1024
+                for row_off in range(0, src.height, step):
+                    h = min(step, src.height - row_off)
+                    for col_off in range(0, src.width, step):
+                        w = min(step, src.width - col_off)
+                        win = Window(col_off, row_off, w, h)
+                        chunk = src.read(band_indices, window=win)
+                        masks = src.read_masks(band_indices, window=win)
+                        valid = np.all(masks > 0, axis=0)
+                        if profile.alpha_band is not None:
+                            valid &= src.read(profile.alpha_band, window=win) > 0
+                        rgb_hwc = normalize_rgb_to_uint8(chunk, los, his, "float32")
+                        alpha = np.where(valid, 255, 0).astype(np.uint8)
+                        rgba = np.concatenate([np.transpose(rgb_hwc, (2, 0, 1)), alpha[None, :, :]], axis=0)
+                        dst.write(rgba, window=win)
+                if cog:
+                    _build_raster_overviews(dst, src.width, src.height, Resampling.average)
+
+            return {
+                "width": src.width,
+                "height": src.height,
+                "band_count": 4,
+                "bands": band_indices,
+                "dtype": "uint8",
+                "crs_epsg": src.crs.to_epsg() if src.crs else None,
+                "output_path": str(out_path),
+            }
+
+
+_S2_STACK_ORDER = ("B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B11", "B12")
+_S2_DW_ORDER = ("B2", "B3", "B4", "B5", "B6", "B7", "B8", "B11", "B12")
+_LS_STACK_ORDER = ("SR_B2", "SR_B3", "SR_B4", "SR_B5", "SR_B6", "SR_B7")
+
+
+def _discover_folder_bands(folder: Path, sensor: str) -> tuple[str, dict[str, Path], Path | None]:
+    raster_files = sorted(
+        p for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in {".tif", ".tiff", ".jp2"}
+    )
+    if not raster_files:
+        raise FileNotFoundError(f"No .tif/.tiff/.jp2 band files found under {folder}")
+
+    s2_map: dict[str, tuple[int, Path]] = {}
+    s2_scl: Path | None = None
+    ls_map: dict[str, Path] = {}
+    ls_qa: Path | None = None
+
+    for p in raster_files:
+        stem = p.stem.upper()
+        if "SCL" in re.split(r"[^A-Z0-9]+", stem) and s2_scl is None:
+            s2_scl = p
+            continue
+        if "QA_PIXEL" in stem and ls_qa is None:
+            ls_qa = p
+            continue
+
+        m_ls = re.search(r"(?<![A-Z0-9])SR_B([1-7])(?![A-Z0-9])", stem)
+        if m_ls:
+            key = f"SR_B{m_ls.group(1)}"
+            ls_map.setdefault(key, p)
+            continue
+
+        m_s2 = re.search(r"(?<![A-Z0-9])B0?(1[0-2]|[1-9])(A)?(?![A-Z0-9])", stem)
+        if m_s2:
+            code = f"B{int(m_s2.group(1))}{m_s2.group(2) or ''}"
+            res_prio = 0 if "10M" in stem else (1 if "20M" in stem else (2 if "60M" in stem else 3))
+            if code not in s2_map or res_prio < s2_map[code][0]:
+                s2_map[code] = (res_prio, p)
+
+    chosen_sensor = sensor.strip().lower()
+    if chosen_sensor == "auto":
+        chosen_sensor = "landsat" if len(ls_map) >= 3 and len(ls_map) >= len(s2_map) else "sentinel2"
+
+    if chosen_sensor == "landsat":
+        if not ls_map:
+            raise ValueError(f"No Landsat SR_B* bands detected in {folder}")
+        return "landsat", ls_map, ls_qa
+
+    if not s2_map:
+        raise ValueError(f"No Sentinel-2 B* bands detected in {folder}")
+    return "sentinel2", {k: v[1] for k, v in s2_map.items()}, s2_scl
+
+
+def stack_band_folder(
+    folder_path: str | Path,
+    output_tif: str | Path,
+    *,
+    sensor: str = "auto",
+    apply_cloud_mask: bool = False,
+    cog: bool = True,
+) -> dict[str, Any]:
+    """Align and stack per-band Sentinel-2 or Landsat files from a folder into one multi-band COG."""
+    folder = Path(folder_path).resolve()
+    if not folder.is_dir():
+        raise FileNotFoundError(f"Band folder not found: {folder}")
+
+    det_sensor, band_files, qa_path = _discover_folder_bands(folder, sensor)
+    if det_sensor == "sentinel2":
+        if all(b in band_files for b in _S2_DW_ORDER):
+            order = list(_S2_DW_ORDER)
+        else:
+            order = [b for b in _S2_STACK_ORDER if b in band_files]
+    else:
+        order = [b for b in _LS_STACK_ORDER if b in band_files]
+        if not order:
+            order = sorted(band_files.keys())
+
+    if not order:
+        raise ValueError(f"Could not order detected {det_sensor} bands in {folder}")
+
+    # Pick the finest-resolution band as the reference grid.
+    best_band = order[0]
+    best_area = float("inf")
+    for b in order:
+        with rasterio.open(band_files[b]) as src:
+            px_area = abs(float(src.transform.a * src.transform.e)) or float("inf")
+            if px_area < best_area:
+                best_area = px_area
+                best_band = b
+
+    with rasterio.open(band_files[best_band]) as ref:
+        ref_crs = ref.crs
+        ref_transform = ref.transform
+        ref_w, ref_h = ref.width, ref.height
+        ref_dtype = ref.dtypes[0]
+        ref_nodata = ref.nodatavals[0]
+
+    cloud_invalid: np.ndarray | None = None
+    if apply_cloud_mask and qa_path is not None:
+        with rasterio.open(qa_path) as qa_src:
+            qa_arr = np.zeros((ref_h, ref_w), dtype=qa_src.dtypes[0])
+            if (
+                qa_src.crs == ref_crs
+                and qa_src.transform == ref_transform
+                and qa_src.width == ref_w
+                and qa_src.height == ref_h
+            ):
+                qa_arr = qa_src.read(1)
+            else:
+                reproject(
+                    source=rasterio.band(qa_src, 1),
+                    destination=qa_arr,
+                    src_transform=qa_src.transform,
+                    src_crs=qa_src.crs,
+                    dst_transform=ref_transform,
+                    dst_crs=ref_crs,
+                    resampling=Resampling.nearest,
+                )
+        if det_sensor == "sentinel2":
+            cloud_invalid = np.isin(qa_arr, [0, 3, 8, 9, 10])
+        else:
+            cloud_invalid = (qa_arr & ((1 << 1) | (1 << 3) | (1 << 4))) != 0
+
+    out_path = Path(output_tif).resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    eff_nodata = ref_nodata if ref_nodata is not None else (0 if "int" in ref_dtype else np.nan)
+    out_meta: dict[str, Any] = {
+        "driver": "GTiff",
+        "height": ref_h,
+        "width": ref_w,
+        "count": len(order),
+        "dtype": ref_dtype,
+        "nodata": eff_nodata,
+        "compress": "deflate",
+        **_cog_tile_kwargs(ref_w, ref_h, cog=cog),
+    }
+    if ref_crs is not None:
+        out_meta["crs"] = ref_crs
+        out_meta["transform"] = ref_transform
+
+    with rasterio.open(out_path, "w", **out_meta) as dst:
+        dst.update_tags(sensor=det_sensor, created_by=f"lulckit/{__version__}")
+        for idx, code in enumerate(order, start=1):
+            dst.set_band_description(idx, code)
+            _tag_band_wavelength(dst, idx, code)
+            with rasterio.open(band_files[code]) as b_src:
+                arr = np.zeros((ref_h, ref_w), dtype=ref_dtype)
+                if (
+                    b_src.crs == ref_crs
+                    and b_src.transform == ref_transform
+                    and b_src.width == ref_w
+                    and b_src.height == ref_h
+                ):
+                    arr = b_src.read(1).astype(ref_dtype, copy=False)
+                else:
+                    reproject(
+                        source=rasterio.band(b_src, 1),
+                        destination=arr,
+                        src_transform=b_src.transform,
+                        src_crs=b_src.crs,
+                        dst_transform=ref_transform,
+                        dst_crs=ref_crs,
+                        resampling=Resampling.bilinear,
+                    )
+                if cloud_invalid is not None:
+                    arr = arr.copy()
+                    arr[cloud_invalid] = eff_nodata
+                dst.write(arr, idx)
+        if cog:
+            _build_raster_overviews(dst, ref_w, ref_h, Resampling.average)
+
+    return {
+        "sensor": det_sensor,
+        "bands": order,
+        "band_count": len(order),
+        "width": ref_w,
+        "height": ref_h,
+        "crs_epsg": ref_crs.to_epsg() if ref_crs else None,
+        "cloud_masked": bool(cloud_invalid is not None),
+        "output_path": str(out_path),
+    }

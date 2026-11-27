@@ -160,17 +160,17 @@ def _detect_spectral_roles(non_alpha: list[BandInfo]) -> dict[str, int]:
     for band in non_alpha:
         ci = band.colorinterp.lower()
         txt = _band_text(band).lower()
-        if "red" not in roles and (ci == "red" or re.search(r"\b(red|b0?4)\b", txt)):
+        if "red" not in roles and (ci == "red" or re.search(r"\b(red|b0?4|sr_b4)\b", txt)):
             roles["red"] = band.index
-        elif "green" not in roles and (ci == "green" or re.search(r"\b(green|b0?3)\b", txt)):
+        elif "green" not in roles and (ci == "green" or re.search(r"\b(green|b0?3|sr_b3)\b", txt)):
             roles["green"] = band.index
-        elif "blue" not in roles and (ci == "blue" or re.search(r"\b(blue|b0?2)\b", txt)):
+        elif "blue" not in roles and (ci == "blue" or re.search(r"\b(blue|b0?2|sr_b2)\b", txt)):
             roles["blue"] = band.index
-        elif "nir" not in roles and re.search(r"\b(nir|near[-_ ]?infrared|b0?8a?)\b", txt):
+        elif "nir" not in roles and re.search(r"\b(nir|near[-_ ]?infrared|b0?8a?|sr_b5)\b", txt):
             roles["nir"] = band.index
-        elif "swir1" not in roles and re.search(r"\b(swir[-_ ]?1|b11)\b", txt):
+        elif "swir1" not in roles and re.search(r"\b(swir[-_ ]?1|b11|sr_b6)\b", txt):
             roles["swir1"] = band.index
-        elif "swir2" not in roles and re.search(r"\b(swir[-_ ]?2|b12)\b", txt):
+        elif "swir2" not in roles and re.search(r"\b(swir[-_ ]?2|b12|sr_b7)\b", txt):
             roles["swir2"] = band.index
     return roles
 
@@ -233,6 +233,43 @@ def _fingerprint_raster(
             "pass --s2-bands if your band order differs."
         )
         return alpha_band, non_alpha_idx, "sentinel2-multispectral", "s2-dw", rgb_bands, s2_bands, spectral, notes
+
+    # 2b. Canonical 6-band Landsat C2 or Sentinel-2 stack (B2,B3,B4,NIR,SWIR1,SWIR2)
+    if len(non_alpha) == 6:
+        upper_stem = path.stem.upper()
+        upper_texts = " ".join(_band_text(b).upper() for b in non_alpha)
+        landsat_hint = any(k in upper_stem for k in ("LANDSAT", "LC08", "LC09", "LE07", "LT05")) or "SR_B" in upper_texts
+        gsd_landsat_like = gsd_mean is not None and 25.0 <= gsd_mean <= 35.0
+        if landsat_hint or gsd_landsat_like or "SR_B5" in upper_texts:
+            spectral = {
+                "blue": non_alpha_idx[0],
+                "green": non_alpha_idx[1],
+                "red": non_alpha_idx[2],
+                "nir": non_alpha_idx[3],
+                "swir1": non_alpha_idx[4],
+                "swir2": non_alpha_idx[5],
+            }
+            rgb_bands = [non_alpha_idx[2], non_alpha_idx[1], non_alpha_idx[0]]
+            notes.append(
+                "Detected 6-band Landsat multispectral stack (coarse 30m GSD for RGB model; results may be generalized)."
+            )
+            return alpha_band, non_alpha_idx, "landsat-multispectral", "rgb-oem", rgb_bands, None, spectral, notes
+
+        if name_hint or tag_hint or gsd_s2_like:
+            spectral = {
+                "blue": non_alpha_idx[0],
+                "green": non_alpha_idx[1],
+                "red": non_alpha_idx[2],
+                "nir": non_alpha_idx[3],
+                "swir1": non_alpha_idx[4],
+                "swir2": non_alpha_idx[5],
+            }
+            rgb_bands = [non_alpha_idx[2], non_alpha_idx[1], non_alpha_idx[0]]
+            notes.append(
+                "Detected 6-band Sentinel-2 stack (B2,B3,B4,B8,B11,B12); using RGB bands for classification "
+                "(pass 9-band Sentinel-2 stack for s2-dw)."
+            )
+            return alpha_band, non_alpha_idx, "sentinel2-6band", "rgb-oem", rgb_bands, None, spectral, notes
 
     # 3. Single-band categorical vs unsupported 1-band or 2-band rasters
     if len(non_alpha) == 1:

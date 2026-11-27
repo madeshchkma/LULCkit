@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import time
 import warnings
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
@@ -18,7 +19,32 @@ from rasterio.windows import Window
 from lulckit import __version__
 from lulckit.geo import compute_row_pixel_areas_m2, normalize_rgb_to_uint8
 from lulckit.inspect import TiffProfile
-from lulckit.models.base import NODATA_VALUE, BaseLULCModel
+from lulckit.models.base import NODATA_VALUE, BaseLULCModel, ClassSpec
+
+
+def write_gdal_category_aux_xml(
+    tif_path: Path,
+    classes: list[ClassSpec],
+    band_desc: str = "LULC_Class",
+) -> Path:
+    """Write a GDAL PAM ``.aux.xml`` sidecar with ``<CategoryNames>`` for RustGIS/QGIS legends."""
+    aux_path = Path(f"{tif_path}.aux.xml")
+    root = ET.Element("PAMDataset")
+    band_el = ET.SubElement(root, "PAMRasterBand", {"band": "1"})
+    desc_el = ET.SubElement(band_el, "Description")
+    desc_el.text = band_desc
+    cats_el = ET.SubElement(band_el, "CategoryNames")
+
+    by_id = {int(c.id): c.name for c in classes if int(c.id) >= 0}
+    max_id = max(by_id, default=-1)
+    for cid in range(max_id + 1):
+        cat = ET.SubElement(cats_el, "Category")
+        cat.text = by_id.get(cid, "")
+
+    tree = ET.ElementTree(root)
+    ET.indent(tree, space="  ")
+    tree.write(aux_path, encoding="utf-8", xml_declaration=True)
+    return aux_path
 
 
 @dataclass
@@ -281,13 +307,22 @@ def run_tiled_inference(
                         if progress_callback is not None:
                             progress_callback(min(start + len(batch_specs), total_tiles), total_tiles)
 
-                    if max(width, height) > 1024:
-                        factors = [2, 4, 8, 16, 32] if max(width, height) > 4096 else [2, 4, 8, 16]
+                    if max(width, height) > 512:
+                        factors = (
+                            [2, 4, 8, 16, 32]
+                            if max(width, height) > 4096
+                            else ([2, 4, 8, 16] if max(width, height) > 1024 else [2, 4])
+                        )
                         dst_lulc.build_overviews(factors, Resampling.nearest)
                         dst_lulc.update_tags(ns="rio_overview", resampling="nearest")
+                        if conf_ctx is not None:
+                            conf_ctx.build_overviews(factors, Resampling.average)
+                            conf_ctx.update_tags(ns="rio_overview", resampling="average")
             finally:
                 if conf_ctx is not None:
                     conf_ctx.close()
+
+    write_gdal_category_aux_xml(out_lulc, model.classes)
 
     if row_areas_m2 is None:
         final_area_m2: dict[int, float] = {}

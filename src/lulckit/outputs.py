@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import csv
 import json
-import math
 import warnings
 from pathlib import Path
 from typing import Any
@@ -379,17 +378,19 @@ def render_rich_inspect(profile: TiffProfile, console: Any) -> None:
     for col in ("#", "Dtype", "Interp", "Description", "Min", "Max", "Mean", "p2..p98", "Valid%"):
         band_table.add_column(col, justify="right" if col in ("#", "Min", "Max", "Mean", "Valid%") else "left")
 
+    def _fmt(v: Any) -> str:
+        return f"{v:.3f}" if isinstance(v, float) else (str(v) if v is not None else "-")
+
     for b in profile.bands:
-        fmt = lambda v: f"{v:.3f}" if isinstance(v, float) else (str(v) if v is not None else "-")
-        p_range = f"{fmt(b.p2)} .. {fmt(b.p98)}" if b.p2 is not None and b.p98 is not None else "-"
+        p_range = f"{_fmt(b.p2)} .. {_fmt(b.p98)}" if b.p2 is not None and b.p98 is not None else "-"
         band_table.add_row(
             str(b.index),
             b.dtype,
             b.colorinterp,
             b.description or "-",
-            fmt(b.min),
-            fmt(b.max),
-            fmt(b.mean),
+            _fmt(b.min),
+            _fmt(b.max),
+            _fmt(b.mean),
             p_range,
             f"{b.valid_ratio * 100:.1f}%",
         )
