@@ -1,0 +1,293 @@
+{
+  "tool": {
+    "name": "lulckit",
+    "version": "0.3.1"
+  },
+  "file": {
+    "path": "C:\\Desktop\\new project\\examples\\bangladesh_lulc_2025\\Bangladesh_LULC_2025.tif",
+    "file_name": "Bangladesh_LULC_2025.tif",
+    "file_size_bytes": 3146957,
+    "file_size_human": "3.00 MB",
+    "driver": "GTiff",
+    "width": 4333,
+    "height": 5481,
+    "band_count": 1,
+    "total_pixels": 23749173,
+    "dtypes": [
+      "uint8"
+    ],
+    "nodata": null,
+    "compression": "DEFLATE",
+    "is_tiled": true,
+    "block_shapes": [
+      [
+        256,
+        256
+      ]
+    ],
+    "interleave": "BAND",
+    "photometric": null,
+    "overviews": [
+      2,
+      4,
+      8,
+      16
+    ],
+    "is_cog_like": true,
+    "stats_sampled": true,
+    "valid_pixel_ratio": 1.0,
+    "detected_profile": "categorical-classified"
+  },
+  "geospatial": {
+    "is_georeferenced": true,
+    "crs_epsg": 4326,
+    "crs_name": "WGS 84",
+    "crs_units": "degree",
+    "crs_is_projected": false,
+    "crs_is_geographic": true,
+    "crs_wkt": "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST],AUTHORITY[\"EPSG\",\"4326\"]]",
+    "crs_proj4": "+proj=longlat +datum=WGS84 +no_defs=True",
+    "transform": [
+      0.0010781649284707067,
+      0.0,
+      88.00857720588841,
+      0.0,
+      -0.0010780766786866246,
+      26.634149858859693
+    ],
+    "gsd_meters": [
+      109.975024,
+      119.400883
+    ],
+    "bounds_native": [
+      88.00857720588841,
+      20.725211582978304,
+      92.68026584095199,
+      26.634149858859693
+    ],
+    "bounds_wgs84": [
+      88.0085772,
+      20.7252116,
+      92.6802658,
+      26.6341499
+    ],
+    "centroid_wgs84": [
+      90.3444215,
+      23.6796808
+    ],
+    "total_area_m2": 311716292580.64,
+    "total_area_ha": 31171629.2581,
+    "total_area_km2": 311716.292581,
+    "valid_area_m2": 311716292580.64,
+    "valid_area_ha": 31171629.2581,
+    "valid_area_km2": 311716.292581
+  },
+  "bands": [
+    {
+      "index": 1,
+      "dtype": "uint8",
+      "nodata": null,
+      "description": "label",
+      "colorinterp": "gray",
+      "min": 0.0,
+      "max": 8.0,
+      "mean": 1.1307053848542443,
+      "std": 1.834145888079697,
+      "p2": 0.0,
+      "p98": 6.0,
+      "valid_ratio": 1.0,
+      "tags": {}
+    }
+  ],
+  "tags": {
+    "AREA_OR_POINT": "Area"
+  },
+  "tag_namespaces": {
+    "IMAGE_STRUCTURE": {
+      "COMPRESSION": "DEFLATE",
+      "INTERLEAVE": "BAND"
+    },
+    "DERIVED_SUBDATASETS": {
+      "DERIVED_SUBDATASET_1_NAME": "DERIVED_SUBDATASET:LOGAMPLITUDE:C:\\Desktop\\new project\\examples\\bangladesh_lulc_2025\\Bangladesh_LULC_2025.tif",
+      "DERIVED_SUBDATASET_1_DESC": "log10 of amplitude of input bands from C:\\Desktop\\new project\\examples\\bangladesh_lulc_2025\\Bangladesh_LULC_2025.tif"
+    }
+  },
+  "spectral_indices": {},
+  "inference": {
+    "model": "categorical",
+    "description": "Direct pass-through for pre-classified discrete integer GeoTIFFs (no ML inference)",
+    "optimal_gsd_m": "any",
+    "repo_id": null,
+    "device": "none (categorical)",
+    "tile_size": 512,
+    "overlap": 0,
+    "batch_size": 1,
+    "band_indices": [
+      1
+    ],
+    "preprocess_mode": "categorical",
+    "tiles_processed": 30,
+    "runtime_seconds": 3.245,
+    "valid_pixels": 23749173,
+    "nodata_pixels": 0
+  },
+  "lulc": {
+    "dominant_class": "Background / Water",
+    "classes": [
+      {
+        "id": 0,
+        "name": "Background / Water",
+        "hex": "#FFFFFF",
+        "rgb": [
+          255,
+          255,
+          255
+        ],
+        "pixels": 14485225,
+        "percent": 60.9925,
+        "area_m2": 190272066549.71,
+        "area_ha": 19027206.655,
+        "area_km2": 190272.06655,
+        "mean_confidence": null
+      },
+      {
+        "id": 1,
+        "name": "Trees",
+        "hex": "#397D49",
+        "rgb": [
+          57,
+          125,
+          73
+        ],
+        "pixels": 4149140,
+        "percent": 17.4707,
+        "area_m2": 54575476826.8,
+        "area_ha": 5457547.6827,
+        "area_km2": 54575.476827,
+        "mean_confidence": null
+      },
+      {
+        "id": 2,
+        "name": "Grass",
+        "hex": "#88B053",
+        "rgb": [
+          136,
+          176,
+          83
+        ],
+        "pixels": 38316,
+        "percent": 0.1613,
+        "area_m2": 503451480.77,
+        "area_ha": 50345.1481,
+        "area_km2": 503.451481,
+        "mean_confidence": null
+      },
+      {
+        "id": 3,
+        "name": "Flooded Vegetation",
+        "hex": "#7A87C6",
+        "rgb": [
+          122,
+          135,
+          198
+        ],
+        "pixels": 367960,
+        "percent": 1.5494,
+        "area_m2": 4819494290.32,
+        "area_ha": 481949.429,
+        "area_km2": 4819.49429,
+        "mean_confidence": null
+      },
+      {
+        "id": 4,
+        "name": "Crops",
+        "hex": "#E49635",
+        "rgb": [
+          228,
+          150,
+          53
+        ],
+        "pixels": 3397043,
+        "percent": 14.3038,
+        "area_m2": 44409993394.29,
+        "area_ha": 4440999.3394,
+        "area_km2": 44409.993394,
+        "mean_confidence": null
+      },
+      {
+        "id": 5,
+        "name": "Shrub & Scrub",
+        "hex": "#DFC35A",
+        "rgb": [
+          223,
+          195,
+          90
+        ],
+        "pixels": 34690,
+        "percent": 0.1461,
+        "area_m2": 455811725.6,
+        "area_ha": 45581.1726,
+        "area_km2": 455.811726,
+        "mean_confidence": null
+      },
+      {
+        "id": 6,
+        "name": "Built Area",
+        "hex": "#C4281B",
+        "rgb": [
+          196,
+          40,
+          27
+        ],
+        "pixels": 1160433,
+        "percent": 4.8862,
+        "area_m2": 15162646840.1,
+        "area_ha": 1516264.684,
+        "area_km2": 15162.64684,
+        "mean_confidence": null
+      },
+      {
+        "id": 7,
+        "name": "Bare Ground",
+        "hex": "#A59B8F",
+        "rgb": [
+          165,
+          155,
+          143
+        ],
+        "pixels": 115245,
+        "percent": 0.4853,
+        "area_m2": 1502531240.39,
+        "area_ha": 150253.124,
+        "area_km2": 1502.53124,
+        "mean_confidence": null
+      },
+      {
+        "id": 8,
+        "name": "Snow & Ice",
+        "hex": "#B39FE1",
+        "rgb": [
+          179,
+          159,
+          225
+        ],
+        "pixels": 1121,
+        "percent": 0.0047,
+        "area_m2": 14820232.65,
+        "area_ha": 1482.0233,
+        "area_km2": 14.820233,
+        "mean_confidence": null
+      }
+    ]
+  },
+  "warnings": [
+    "Detected pre-classified discrete categorical raster (values: [0, 1, 2, 3, 4, 5, 6, 7, 8]). Pass --class-labels, --class-colors, or --nodata-value to customize styling and masking."
+  ],
+  "output_files": {
+    "lulc_geotiff": "examples\\bangladesh_lulc_2025\\outputs\\Bangladesh_LULC_2025_lulc.tif",
+    "report_json": "examples\\bangladesh_lulc_2025\\outputs\\Bangladesh_LULC_2025_report.json",
+    "summary_csv": "examples\\bangladesh_lulc_2025\\outputs\\Bangladesh_LULC_2025_summary.csv",
+    "preview_png": "examples\\bangladesh_lulc_2025\\outputs\\Bangladesh_LULC_2025_preview.png",
+    "interactive_html": "examples\\bangladesh_lulc_2025\\outputs\\Bangladesh_LULC_2025_map.html"
+  }
+}

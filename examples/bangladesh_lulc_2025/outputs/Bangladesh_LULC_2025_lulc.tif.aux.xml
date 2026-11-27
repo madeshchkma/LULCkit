@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <Description>LULC_Class</Description>
+    <CategoryNames>
+      <Category>Background / Water</Category>
+      <Category>Trees</Category>
+      <Category>Grass</Category>
+      <Category>Flooded Vegetation</Category>
+      <Category>Crops</Category>
+      <Category>Shrub &amp; Scrub</Category>
+      <Category>Built Area</Category>
+      <Category>Bare Ground</Category>
+      <Category>Snow &amp; Ice</Category>
+    </CategoryNames>
+  </PAMRasterBand>
+</PAMDataset>

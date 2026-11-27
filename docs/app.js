@@ -198,6 +198,30 @@
     2: "Late-Transplanted Boro Rice",
   };
 
+  const BANGLADESH_LABELS = {
+    0: "Background / Water",
+    1: "Trees",
+    2: "Grass",
+    3: "Flooded Vegetation",
+    4: "Crops",
+    5: "Shrub & Scrub",
+    6: "Built Area",
+    7: "Bare Ground",
+    8: "Snow & Ice",
+  };
+
+  const BANGLADESH_COLORS = {
+    0: [255, 255, 255],
+    1: [57, 125, 73],
+    2: [136, 176, 83],
+    3: [122, 135, 198],
+    4: [228, 150, 53],
+    5: [223, 195, 90],
+    6: [196, 40, 27],
+    7: [165, 155, 143],
+    8: [179, 159, 225],
+  };
+
   const state = {
     fileName: null,
     fileSizeBytes: 0,
@@ -354,9 +378,13 @@
   function applyPaletteToClasses(paletteName) {
     const pal = PALETTES[paletteName] || PALETTES["arcgis-crop"];
     let cidx = 0;
-    const isBogura = (state.fileName || "").toLowerCase().includes("bogura_boro");
+    const lowerName = (state.fileName || "").toLowerCase();
+    const isBogura = lowerName.includes("bogura_boro");
+    const isBangladesh = lowerName.includes("bangladesh_lulc");
     state.classes.forEach((cls) => {
-      if (cls.id === 0) {
+      if (isBangladesh && paletteName === "dynamic-world" && BANGLADESH_COLORS[cls.id]) {
+        cls.rgb = [...BANGLADESH_COLORS[cls.id]];
+      } else if (cls.id === 0) {
         cls.rgb = [255, 255, 255];
       } else {
         cls.rgb = [...pal[cidx % pal.length]];
@@ -364,6 +392,8 @@
       }
       if (!cls.userEdited && isBogura && BOGURA_LABELS[cls.id]) {
         cls.name = BOGURA_LABELS[cls.id];
+      } else if (!cls.userEdited && isBangladesh && BANGLADESH_LABELS[cls.id]) {
+        cls.name = BANGLADESH_LABELS[cls.id];
       }
     });
   }
@@ -403,119 +433,209 @@
     });
   }
 
-  async function loadGeoTIFF(source, fileName, fileSizeBytes) {
-    $("statusText").textContent = `Reading ${fileName}...`;
-    const tiff = source instanceof Blob ? await GeoTIFF.fromBlob(source) : await GeoTIFF.fromArrayBuffer(source);
-    const image = await tiff.getImage(0);
-    const width = image.getWidth();
-    const height = image.getHeight();
-    const bandsCount = image.getSamplesPerPixel();
-    const nodataRaw = image.getGDALNoData();
-    const nodata = nodataRaw !== null && nodataRaw !== undefined ? Number(nodataRaw) : null;
-    const sp = extractSpatialMeta(image);
-
-    const maxPreviewW = 1400;
-    const readW = Math.min(width, maxPreviewW);
-    const readH = Math.max(1, Math.round(height * (readW / width)));
-
-    const sf = image.getSampleFormat ? image.getSampleFormat() : [1];
-    const isFloat = sf && (sf[0] === 3);
-
-    const rasters = await image.readRasters({
-      width: readW,
-      height: readH,
-      resampleMethod: bandsCount === 1 && !isFloat ? "nearest" : "bilinear",
+  function yieldFrame() {
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => setTimeout(resolve, 35));
     });
+  }
 
-    Object.assign(state, {
-      fileName,
-      fileSizeBytes,
-      width,
-      height,
-      readW,
-      readH,
-      bandsCount,
-      rasters,
-      nodata,
-      ...sp,
-    });
+  function showStudioLoader(title, stage, pct, stepIndex = 1) {
+    const loader = $("studioLoader");
+    if (loader) {
+      loader.classList.remove("hidden");
+      if (title && $("loaderTitle")) $("loaderTitle").textContent = title;
+      if (stage && $("loaderStage")) $("loaderStage").textContent = stage;
+      const clamped = Math.max(4, Math.min(100, Math.round(pct)));
+      if ($("loaderBarFill")) $("loaderBarFill").style.width = `${clamped}%`;
+      if ($("loaderPct")) $("loaderPct").textContent = `${clamped}%`;
+      document.querySelectorAll("#studioLoader .loader-step").forEach((el) => {
+        const s = Number(el.dataset.step || 0);
+        el.classList.toggle("is-done", s < stepIndex);
+        el.classList.toggle("is-active", s === stepIndex);
+      });
+    }
+    const dz = $("dropzone");
+    if (dz) dz.classList.add("is-loading");
+  }
 
-    // Detect categorical raster (1 band integer, <= 32 unique classes)
-    state.classes = [];
-    state.isCategorical = false;
-    if (bandsCount === 1 && !isFloat) {
-      const band0 = rasters[0];
-      const uniq = new Set();
-      let overflow = false;
-      for (let i = 0; i < band0.length; i++) {
-        const v = band0[i];
-        if (nodata !== null && v === nodata) continue;
-        if (!Number.isFinite(v)) continue;
-        const iv = Math.round(v);
-        if (!uniq.has(iv)) {
-          uniq.add(iv);
-          if (uniq.size > 32) {
-            overflow = true;
-            break;
-          }
+  function hideStudioLoader() {
+    if ($("studioLoader")) $("studioLoader").classList.add("hidden");
+    if ($("dropzone")) $("dropzone").classList.remove("is-loading");
+  }
+
+  async function pickDecodeImage(tiff, fullWidth, targetWidth) {
+    try {
+      const count = await tiff.getImageCount();
+      let bestImg = await tiff.getImage(0);
+      let bestW = fullWidth;
+      for (let i = 1; i < Math.min(count, 8); i++) {
+        const cand = await tiff.getImage(i);
+        const cw = cand.getWidth();
+        if (cw >= targetWidth && cw < bestW) {
+          bestImg = cand;
+          bestW = cw;
         }
       }
-      if (!overflow && uniq.size >= 1) {
-        state.isCategorical = true;
-        const sorted = Array.from(uniq).sort((a, b) => a - b);
-        state.classes = sorted.map((cid) => ({
-          id: cid,
-          name: `Class ${cid}`,
-          rgb: [120, 120, 120],
-          visible: true,
-          userEdited: false,
-        }));
-        applyPaletteToClasses($("paletteSelect").value);
-      }
+      return bestImg;
+    } catch (_) {
+      return tiff.getImage(0);
     }
+  }
 
-    // Configure smart mode defaults
-    const stem = fileName.replace(/\.(tiff?|tif)$/i, "");
-    $("titleInput").value = fileName.toLowerCase().includes("bogura_boro")
-      ? "Boro Area Mapping for Bogura - 2026"
-      : stem;
-    $("sbBand").max = bandsCount;
-    $("bandR").max = bandsCount;
-    $("bandG").max = bandsCount;
-    $("bandB").max = bandsCount;
-    $("idxBandA").max = bandsCount;
-    $("idxBandB").max = bandsCount;
+  async function loadGeoTIFF(source, fileName, fileSizeBytes) {
+    try {
+      $("statusText").textContent = `Processing ${fileName}...`;
+      showStudioLoader(`Processing ${fileName}`, "Reading GeoTIFF binary stream...", 20, 1);
+      await yieldFrame();
 
-    if (bandsCount >= 3) {
-      $("modeSelect").value = "rgb";
-      if (bandsCount >= 8) {
-        $("bandR").value = 4;
-        $("bandG").value = 3;
-        $("bandB").value = 2;
-        $("idxBandA").value = 8;
-        $("idxBandB").value = 4;
+      const tiff = source instanceof Blob ? await GeoTIFF.fromBlob(source) : await GeoTIFF.fromArrayBuffer(source);
+      const image = await tiff.getImage(0);
+      const width = image.getWidth();
+      const height = image.getHeight();
+      const bandsCount = image.getSamplesPerPixel();
+      const nodataRaw = image.getGDALNoData();
+      const nodata = nodataRaw !== null && nodataRaw !== undefined ? Number(nodataRaw) : null;
+      const sp = extractSpatialMeta(image);
+
+      const maxPreviewW = 1400;
+      const readW = Math.min(width, maxPreviewW);
+      const readH = Math.max(1, Math.round(height * (readW / width)));
+
+      showStudioLoader(
+        `Processing ${fileName}`,
+        `Inspecting CRS (${sp.crsLabel}) & selecting optimal pyramid level...`,
+        46,
+        2
+      );
+      await yieldFrame();
+
+      const decodeImg = width > maxPreviewW ? await pickDecodeImage(tiff, width, readW) : image;
+      const sf = image.getSampleFormat ? image.getSampleFormat() : [1];
+      const isFloat = sf && (sf[0] === 3);
+
+      showStudioLoader(
+        `Processing ${fileName}`,
+        `Decoding ${bandsCount} band(s) at ${readW} × ${readH} preview resolution...`,
+        74,
+        3
+      );
+      await yieldFrame();
+
+      const rasters = await decodeImg.readRasters({
+        width: readW,
+        height: readH,
+        resampleMethod: bandsCount === 1 && !isFloat ? "nearest" : "bilinear",
+      });
+
+      const isBangladesh = fileName.toLowerCase().includes("bangladesh_lulc");
+      const isBogura = fileName.toLowerCase().includes("bogura_boro");
+
+      Object.assign(state, {
+        fileName,
+        fileSizeBytes,
+        width,
+        height,
+        readW,
+        readH,
+        bandsCount,
+        rasters,
+        nodata,
+        ...sp,
+      });
+
+      if (isBangladesh) {
+        $("paletteSelect").value = "dynamic-world";
+      } else if (isBogura) {
+        $("paletteSelect").value = "arcgis-crop";
+      }
+
+      // Detect categorical raster (1 band integer, <= 32 unique classes)
+      state.classes = [];
+      state.isCategorical = false;
+      if (bandsCount === 1 && !isFloat) {
+        const band0 = rasters[0];
+        const uniq = new Set();
+        let overflow = false;
+        for (let i = 0; i < band0.length; i++) {
+          const v = band0[i];
+          if (nodata !== null && v === nodata) continue;
+          if (!Number.isFinite(v)) continue;
+          const iv = Math.round(v);
+          if (!uniq.has(iv)) {
+            uniq.add(iv);
+            if (uniq.size > 32) {
+              overflow = true;
+              break;
+            }
+          }
+        }
+        if (!overflow && uniq.size >= 1) {
+          state.isCategorical = true;
+          const sorted = Array.from(uniq).sort((a, b) => a - b);
+          state.classes = sorted.map((cid) => ({
+            id: cid,
+            name: `Class ${cid}`,
+            rgb: [120, 120, 120],
+            visible: true,
+            userEdited: false,
+          }));
+          applyPaletteToClasses($("paletteSelect").value);
+        }
+      }
+
+      showStudioLoader(`Processing ${fileName}`, "Rendering cartographic canvas & area analytics...", 95, 4);
+      await yieldFrame();
+
+      // Configure smart mode defaults
+      const stem = fileName.replace(/\.(tiff?|tif)$/i, "");
+      $("titleInput").value = isBogura
+        ? "Boro Area Mapping for Bogura - 2026"
+        : isBangladesh
+          ? "Bangladesh Land Use / Land Cover - 2025"
+          : stem;
+      $("sbBand").max = bandsCount;
+      $("bandR").max = bandsCount;
+      $("bandG").max = bandsCount;
+      $("bandB").max = bandsCount;
+      $("idxBandA").max = bandsCount;
+      $("idxBandB").max = bandsCount;
+
+      if (bandsCount >= 3) {
+        $("modeSelect").value = "rgb";
+        if (bandsCount >= 8) {
+          $("bandR").value = 4;
+          $("bandG").value = 3;
+          $("bandB").value = 2;
+          $("idxBandA").value = 8;
+          $("idxBandB").value = 4;
+        } else {
+          $("bandR").value = 1;
+          $("bandG").value = 2;
+          $("bandB").value = 3;
+          $("idxBandA").value = 1;
+          $("idxBandB").value = 2;
+        }
+      } else if (state.isCategorical) {
+        $("modeSelect").value = "categorical";
       } else {
-        $("bandR").value = 1;
-        $("bandG").value = 2;
-        $("bandB").value = 3;
-        $("idxBandA").value = 1;
-        $("idxBandB").value = 2;
+        $("modeSelect").value = "singleband";
       }
-    } else if (state.isCategorical) {
-      $("modeSelect").value = "categorical";
-    } else {
-      $("modeSelect").value = "singleband";
-    }
 
-    state.measurePoints = [];
-    renderClassEditorRows();
-    updateControlVisibility();
-    renderAll();
-    $("downloadPngBtn").disabled = false;
-    $("downloadCsvBtn").disabled = false;
-    $("downloadJsonBtn").disabled = false;
-    $("downloadQmlBtn").disabled = false;
-    $("downloadSldBtn").disabled = false;
+      state.measurePoints = [];
+      renderClassEditorRows();
+      updateControlVisibility();
+      renderAll();
+      $("downloadPngBtn").disabled = false;
+      $("downloadCsvBtn").disabled = false;
+      $("downloadJsonBtn").disabled = false;
+      $("downloadQmlBtn").disabled = false;
+      $("downloadSldBtn").disabled = false;
+    } catch (err) {
+      $("statusText").textContent = `Could not decode ${fileName}: ${err.message}`;
+      throw err;
+    } finally {
+      hideStudioLoader();
+    }
   }
 
   function updateControlVisibility() {
@@ -1453,22 +1573,57 @@
     if (f) loadGeoTIFF(f, f.name, f.size);
   });
 
-  $("loadSampleBtn").addEventListener("click", async () => {
-    const btn = $("loadSampleBtn");
-    btn.disabled = true;
-    btn.textContent = "Loading Bogura COG...";
+  async function fetchAndLoadSample(urls, fileName, btn, idleLabel, busyLabel) {
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = busyLabel;
+    }
     try {
-      let resp = await fetch("demo/Bogura_Boro_Map_10m_2026.tif");
-      if (!resp.ok) resp = await fetch("../examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026.tif");
+      showStudioLoader(`Loading ${fileName}`, "Fetching sample GeoTIFF...", 8, 1);
+      await yieldFrame();
+      let resp = null;
+      for (const u of urls) {
+        const candidate = await fetch(u);
+        if (candidate.ok) {
+          resp = candidate;
+          break;
+        }
+      }
+      if (!resp) throw new Error("Sample GeoTIFF unavailable");
       const buf = await resp.arrayBuffer();
-      await loadGeoTIFF(buf, "Bogura_Boro_Map_10m_2026.tif", buf.byteLength);
+      await loadGeoTIFF(buf, fileName, buf.byteLength);
     } catch (err) {
       $("statusText").textContent = `Could not fetch sample GeoTIFF: ${err.message}`;
+      hideStudioLoader();
     } finally {
-      btn.disabled = false;
-      btn.textContent = "Load Bogura 2026 Sample (10m COG)";
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = idleLabel;
+      }
     }
-  });
+  }
+
+  $("loadSampleBtn").addEventListener("click", () =>
+    fetchAndLoadSample(
+      ["demo/Bogura_Boro_Map_10m_2026.tif", "../examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026.tif"],
+      "Bogura_Boro_Map_10m_2026.tif",
+      $("loadSampleBtn"),
+      "Load Bogura 2026 (10m COG)",
+      "Loading Bogura COG..."
+    )
+  );
+
+  if ($("loadBangladeshBtn")) {
+    $("loadBangladeshBtn").addEventListener("click", () =>
+      fetchAndLoadSample(
+        ["demo/Bangladesh_LULC_2025.tif", "../examples/bangladesh_lulc_2025/Bangladesh_LULC_2025.tif"],
+        "Bangladesh_LULC_2025.tif",
+        $("loadBangladeshBtn"),
+        "Load Bangladesh 2025 LULC (COG)",
+        "Loading Bangladesh COG..."
+      )
+    );
+  }
 
   $("modeSelect").addEventListener("change", () => {
     updateControlVisibility();
@@ -1785,6 +1940,62 @@ Running categorical (56 tiles) ━━━━━━━━━━━━━━━━�
       setTimeout(() => (copyTermBtn.textContent = "Copy cmd"), 1500);
     });
   }
+
+  const SHOWCASES = {
+    bogura: {
+      heading: "Bogura District Boro Rice Mapping (10m COG)",
+      sub: "Scrub between the unstyled 1-band input GeoTIFF (<code>7,937 × 6,470 px</code>, <code>EPSG:32645</code>, <code>513,523.90 ha</code>) and the automated LULCkit print map &amp; MapLibre viewer.",
+      dlHref: "demo/Bogura_Boro_Map_10m_2026.tif",
+      dlText: "Download Sample GeoTIFF (2.56 MB)",
+      after: "demo/Bogura_Boro_Map_10m_2026_preview.png",
+      afterFallback: "../examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_preview.png",
+      before: "demo/Bogura_Boro_Map_10m_2026_input_preview.png",
+      beforeFallback: "../examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026_input_preview.png",
+      mapHtml: "demo/Bogura_Boro_Map_10m_2026_map.html",
+    },
+    bangladesh: {
+      heading: "Bangladesh National Land Use / Land Cover — 2025 (COG)",
+      sub: "Scrub between the 9-class input GeoTIFF (<code>4,333 × 5,481 px</code>, <code>EPSG:4326</code>, <code>31,171,629 ha</code>) and the LULCkit Dynamic World print map &amp; MapLibre viewer.",
+      dlHref: "demo/Bangladesh_LULC_2025.tif",
+      dlText: "Download Bangladesh COG (3.00 MB)",
+      after: "demo/Bangladesh_LULC_2025_preview.png",
+      afterFallback: "../examples/bangladesh_lulc_2025/outputs/Bangladesh_LULC_2025_preview.png",
+      before: "demo/Bangladesh_LULC_2025_input_preview.png",
+      beforeFallback: "../examples/bangladesh_lulc_2025/Bangladesh_LULC_2025_input_preview.png",
+      mapHtml: "demo/Bangladesh_LULC_2025_map.html",
+    },
+  };
+
+  function selectShowcase(key) {
+    const s = SHOWCASES[key] || SHOWCASES.bogura;
+    if ($("exTabBogura")) $("exTabBogura").classList.toggle("active", key === "bogura");
+    if ($("exTabBangladesh")) $("exTabBangladesh").classList.toggle("active", key === "bangladesh");
+    if ($("exampleHeading")) $("exampleHeading").textContent = s.heading;
+    if ($("exampleSub")) $("exampleSub").innerHTML = s.sub;
+    if ($("exampleDownloadBtn")) {
+      $("exampleDownloadBtn").href = s.dlHref;
+      $("exampleDownloadBtn").textContent = s.dlText;
+    }
+    if ($("compareAfterImg")) {
+      $("compareAfterImg").onerror = function () {
+        this.onerror = null;
+        this.src = s.afterFallback;
+      };
+      $("compareAfterImg").src = s.after;
+    }
+    if ($("compareBeforeImg")) {
+      $("compareBeforeImg").onerror = function () {
+        this.onerror = null;
+        this.src = s.beforeFallback;
+      };
+      $("compareBeforeImg").src = s.before;
+    }
+    if ($("exampleMapLink")) $("exampleMapLink").href = s.mapHtml;
+    if ($("exampleMapIframe")) $("exampleMapIframe").src = s.mapHtml;
+  }
+
+  if ($("exTabBogura")) $("exTabBogura").addEventListener("click", () => selectShowcase("bogura"));
+  if ($("exTabBangladesh")) $("exTabBangladesh").addEventListener("click", () => selectShowcase("bangladesh"));
 
   const compareRange = $("compareRange");
   const compareBefore = $("compareBefore");

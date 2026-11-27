@@ -238,7 +238,10 @@
           <h2>Browser GeoTIFF Studio</h2>
           <p class="section-sub">Runs 100% locally in your browser using <code>geotiff.js</code>, <code>proj4</code>, HTML5 Canvas, and MapLibre GL JS — your GeoTIFFs never leave your computer.</p>
         </div>
-        <button class="btn btn-primary" id="loadSampleBtn" type="button">Load Bogura 2026 Sample (10m COG)</button>
+        <div class="sample-btn-group">
+          <button class="btn btn-primary" id="loadSampleBtn" type="button">Load Bogura 2026 (10m COG)</button>
+          <button class="btn btn-secondary" id="loadBangladeshBtn" type="button">Load Bangladesh 2025 LULC (COG)</button>
+        </div>
       </div>
 
       <div class="studio-grid">
@@ -471,7 +474,7 @@
 
         <div class="card">
           <div class="status-bar">
-            <span id="statusText">Click <strong>Load Bogura 2026 Sample</strong> or drop any <code>.tif</code> file to begin.</span>
+            <span id="statusText">Choose <strong>Bogura 2026</strong>, <strong>Bangladesh 2025 LULC</strong>, or drop any <code>.tif</code> file to begin.</span>
             <span id="profileBadge"></span>
           </div>
 
@@ -499,31 +502,60 @@
             <div class="identify-bar" id="identifyBar">Click map to Identify pixel value or choose a Measure tool</div>
           </div>
 
-          <div id="printView" class="canvas-wrap">
-            <canvas id="printCanvas" width="1200" height="850"></canvas>
-          </div>
-
-          <div id="webMapView" class="webmap-wrap hidden">
-            <div id="webMap"></div>
-            <div class="map-overlay-ctrl">
-              <label for="basemapSelect" style="font-weight:600;display:block;margin-bottom:4px;">Basemap</label>
-              <select id="basemapSelect" style="width:100%;margin-bottom:8px;padding:4px;">
-                <option value="positron" selected>Carto Positron Light</option>
-                <option value="dark">Carto Dark Matter</option>
-                <option value="osm">OpenStreetMap</option>
-                <option value="esri">Esri World Imagery</option>
-                <option value="esri_topo">Esri World Topo</option>
-              </select>
-              <label for="resampleSelect" style="font-weight:600;display:block;margin-bottom:4px;">Resampling</label>
-              <select id="resampleSelect" style="width:100%;margin-bottom:8px;padding:4px;">
-                <option value="nearest" selected>Nearest Neighbor (Crisp)</option>
-                <option value="linear">Bilinear (Smooth)</option>
-              </select>
-              <label for="opacitySlider" style="font-weight:600;display:block;">Layer Opacity: <span id="opacityVal">85%</span></label>
-              <input id="opacitySlider" type="range" min="0" max="100" value="85" style="width:100%;" />
-              <button class="btn btn-sm" id="zoomLayerBtn" type="button" style="width:100%;margin-top:8px;">Zoom to Layer Extent</button>
+          <div class="studio-stage">
+            <div class="studio-loader-overlay hidden" id="studioLoader" role="status" aria-live="polite">
+              <div class="loader-card">
+                <div class="radar-orbit" aria-hidden="true">
+                  <span class="radar-ring"></span>
+                  <span class="radar-ring radar-ring-2"></span>
+                  <span class="radar-sweep"></span>
+                  <div class="raster-mosaic-pulse">
+                    <span></span><span></span><span></span>
+                    <span></span><span></span><span></span>
+                    <span></span><span></span><span></span>
+                  </div>
+                </div>
+                <p class="loader-title" id="loaderTitle">Processing GeoTIFF...</p>
+                <p class="loader-stage" id="loaderStage">Reading binary TIFF stream...</p>
+                <div class="loader-bar-row">
+                  <div class="loader-bar-track"><div class="loader-bar-fill" id="loaderBarFill"></div></div>
+                  <span class="loader-pct" id="loaderPct">15%</span>
+                </div>
+                <div class="loader-steps">
+                  <span class="loader-step is-active" data-step="1">1. Read</span>
+                  <span class="loader-step" data-step="2">2. Profile</span>
+                  <span class="loader-step" data-step="3">3. Decode</span>
+                  <span class="loader-step" data-step="4">4. Render</span>
+                </div>
+              </div>
             </div>
-            <div class="map-coords" id="mapCoords">Move cursor over map</div>
+
+            <div id="printView" class="canvas-wrap">
+              <canvas id="printCanvas" width="1200" height="850"></canvas>
+            </div>
+
+            <div id="webMapView" class="webmap-wrap hidden">
+              <div id="webMap"></div>
+              <div class="map-overlay-ctrl">
+                <label for="basemapSelect" style="font-weight:600;display:block;margin-bottom:4px;">Basemap</label>
+                <select id="basemapSelect" style="width:100%;margin-bottom:8px;padding:4px;">
+                  <option value="positron" selected>Carto Positron Light</option>
+                  <option value="dark">Carto Dark Matter</option>
+                  <option value="osm">OpenStreetMap</option>
+                  <option value="esri">Esri World Imagery</option>
+                  <option value="esri_topo">Esri World Topo</option>
+                </select>
+                <label for="resampleSelect" style="font-weight:600;display:block;margin-bottom:4px;">Resampling</label>
+                <select id="resampleSelect" style="width:100%;margin-bottom:8px;padding:4px;">
+                  <option value="nearest" selected>Nearest Neighbor (Crisp)</option>
+                  <option value="linear">Bilinear (Smooth)</option>
+                </select>
+                <label for="opacitySlider" style="font-weight:600;display:block;">Layer Opacity: <span id="opacityVal">85%</span></label>
+                <input id="opacitySlider" type="range" min="0" max="100" value="85" style="width:100%;" />
+                <button class="btn btn-sm" id="zoomLayerBtn" type="button" style="width:100%;margin-top:8px;">Zoom to Layer Extent</button>
+              </div>
+              <div class="map-coords" id="mapCoords">Move cursor over map</div>
+            </div>
           </div>
 
           <div class="meta-grid" id="metaGrid"></div>
@@ -687,31 +719,38 @@
 
   <section id="examples" class="section section-alt">
     <div class="container">
+      <div class="example-tabs" role="tablist" aria-label="Sample GeoTIFF showcases">
+        <button class="btn btn-sm example-tab active" id="exTabBogura" type="button">Bogura Boro 2026 (10m COG)</button>
+        <button class="btn btn-sm example-tab" id="exTabBangladesh" type="button">Bangladesh LULC 2025 (National COG)</button>
+      </div>
+
       <div class="section-header">
         <div>
           <span class="eyebrow">Real-World Benchmark</span>
-          <h2>Bogura District Boro Rice Mapping (10m COG)</h2>
-          <p class="section-sub">Scrub between the unstyled 1-band input GeoTIFF (<code>7,937 × 6,470 px</code>, <code>EPSG:32645</code>, <code>513,523.90 ha</code>) and the automated LULCkit print map &amp; MapLibre viewer.</p>
+          <h2 id="exampleHeading">Bogura District Boro Rice Mapping (10m COG)</h2>
+          <p class="section-sub" id="exampleSub">Scrub between the unstyled 1-band input GeoTIFF (<code>7,937 × 6,470 px</code>, <code>EPSG:32645</code>, <code>513,523.90 ha</code>) and the automated LULCkit print map &amp; MapLibre viewer.</p>
         </div>
-        <a class="btn btn-sm" href="demo/Bogura_Boro_Map_10m_2026.tif" download>Download Sample GeoTIFF (2.56 MB)</a>
+        <a class="btn btn-sm" id="exampleDownloadBtn" href="demo/Bogura_Boro_Map_10m_2026.tif" download>Download Sample GeoTIFF (2.56 MB)</a>
       </div>
 
       <div class="example-grid">
         <div class="card compare-shell">
           <div class="compare-stage">
             <img
+              id="compareAfterImg"
               src="demo/Bogura_Boro_Map_10m_2026_preview.png"
               onerror="this.onerror=null;this.src='../examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_preview.png';"
-              alt="Styled LULCkit A4 land use land cover print map of Bogura District 2026 with UTM axes, compass rose, and ArcGIS scale bar"
+              alt="Styled LULCkit A4 land use land cover print map preview with axes, compass rose, and ArcGIS scale bar"
               width="1400"
               height="990"
               loading="lazy"
             />
             <div class="compare-before" id="compareBefore">
               <img
+                id="compareBeforeImg"
                 src="demo/Bogura_Boro_Map_10m_2026_input_preview.png"
                 onerror="this.onerror=null;this.src='../examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026_input_preview.png';"
-                alt="Raw unstyled single-band Bogura 10m GeoTIFF raster before LULCkit styling"
+                alt="Raw unstyled single-band GeoTIFF raster before LULCkit styling"
                 width="1400"
                 height="1141"
                 loading="lazy"
@@ -733,11 +772,12 @@
         <div class="card" style="display:flex;flex-direction:column;gap:12px;">
           <div class="section-header" style="margin-bottom:0;">
             <h3 style="margin:0;font-family:var(--font-display);font-size:18px;">Interactive MapLibre GL JS Viewer</h3>
-            <a class="btn btn-sm" href="demo/Bogura_Boro_Map_10m_2026_map.html" target="_blank" rel="noopener">Open Fullscreen</a>
+            <a class="btn btn-sm" id="exampleMapLink" href="demo/Bogura_Boro_Map_10m_2026_map.html" target="_blank" rel="noopener">Open Fullscreen</a>
           </div>
           <iframe
             class="demo-iframe"
-            title="Bogura Boro Map Interactive Preview"
+            id="exampleMapIframe"
+            title="Interactive LULC Map Preview"
             src="demo/Bogura_Boro_Map_10m_2026_map.html"
             loading="lazy"
           ></iframe>
@@ -888,7 +928,9 @@
             <li><a href="#studio">Browser GeoTIFF Studio</a></li>
             <li><a href="https://huggingface.co/spaces/madeshchakma/LULCkit" target="_blank" rel="noopener">Cloud ML (HF Spaces)</a></li>
             <li><a href="demo/Bogura_Boro_Map_10m_2026_map.html" target="_blank" rel="noopener">Bogura Interactive Map</a></li>
-            <li><a href="demo/Bogura_Boro_Map_10m_2026.tif" download>Sample 10m COG TIFF</a></li>
+            <li><a href="demo/Bogura_Boro_Map_10m_2026.tif" download>Sample Bogura 10m COG</a></li>
+            <li><a href="demo/Bangladesh_LULC_2025_map.html" target="_blank" rel="noopener">Bangladesh 2025 Map</a></li>
+            <li><a href="demo/Bangladesh_LULC_2025.tif" download>Sample Bangladesh 2025 COG</a></li>
           </ul>
         </div>
 

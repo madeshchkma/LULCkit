@@ -6,6 +6,7 @@ on:
     paths:
       - "docs/**"
       - "examples/bogura_boro_2026/**"
+      - "examples/bangladesh_lulc_2025/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -36,6 +37,10 @@ jobs:
           cp examples/bogura_boro_2026/Bogura_Boro_Map_10m_2026_input_preview.png _site/demo/
           cp examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_preview.png _site/demo/
           cp examples/bogura_boro_2026/outputs/Bogura_Boro_Map_10m_2026_map.html _site/demo/
+          cp examples/bangladesh_lulc_2025/Bangladesh_LULC_2025.tif _site/demo/
+          cp examples/bangladesh_lulc_2025/Bangladesh_LULC_2025_input_preview.png _site/demo/
+          cp examples/bangladesh_lulc_2025/outputs/Bangladesh_LULC_2025_preview.png _site/demo/
+          cp examples/bangladesh_lulc_2025/outputs/Bangladesh_LULC_2025_map.html _site/demo/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
