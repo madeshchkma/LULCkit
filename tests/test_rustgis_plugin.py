@@ -226,7 +226,7 @@ def test_commands_models_about_and_map_hooks(tmp_path: Path) -> None:
     res_about, calls_about = _call_plugin({"kind": "command", "id": "about"})
     assert any(c["op"] == "host.notify" for c in calls_about)
     assert res_about["name"] == "LULCkit"
-    assert res_about["version"] == "0.2.0"
+    assert res_about["version"] == "0.3.0"
 
     cat_path, _, _, _ = _write_test_rasters(tmp_path)
     res_load, calls_load = _call_plugin(
@@ -426,8 +426,8 @@ def test_package_builder_deterministic_and_clean(tmp_path: Path) -> None:
 
     out1 = tmp_path / "b1"
     out2 = tmp_path / "b2"
-    pkg1, json1, sha1 = mod.build_rustgis_package(output_dir=out1, tag="v0.2.0")
-    pkg2, _, sha2 = mod.build_rustgis_package(output_dir=out2, tag="v0.2.0")
+    pkg1, json1, sha1 = mod.build_rustgis_package(output_dir=out1, tag="v0.3.0")
+    pkg2, _, sha2 = mod.build_rustgis_package(output_dir=out2, tag="v0.3.0")
 
     assert sha1 == sha2
     assert pkg1.is_file() and pkg2.is_file()

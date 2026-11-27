@@ -1,7 +1,7 @@
 {
   "id": "lulckit",
   "name": "LULCkit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Turn any optical or pre-classified GeoTIFF into Cloud-Optimized LULC maps with named legends, multi-band COG exports, Sentinel-2/Landsat folder stacks, spectral indices (NDVI, NDWI, MNDWI, NDBI, SAVI, EVI, NBR), and print cartography.",
   "author": "Madesh Chakma",
   "homepage": "https://github.com/madeshchkma/LULCkit",
@@ -120,9 +120,23 @@
         {
           "name": "hfModel",
           "label": "Custom Hugging Face model",
-          "help": "Optional Hugging Face SegFormer repo ID (overrides default RGB weights)",
+          "help": "Optional Hugging Face semantic segmentation repo ID (SegFormer, UPerNet, Mask2Former, DPT)",
           "kind": "text",
           "default": ""
+        },
+        {
+          "name": "tta",
+          "label": "4-way flip TTA",
+          "help": "Average predictions over 4 flip augmentations for cleaner edges (slower)",
+          "kind": "boolean",
+          "default": false
+        },
+        {
+          "name": "sieveSize",
+          "label": "Speckle sieve (min pixels)",
+          "help": "Remove isolated class patches smaller than N pixels (0 = off)",
+          "kind": "number",
+          "default": 0
         },
         {
           "name": "classLabels",

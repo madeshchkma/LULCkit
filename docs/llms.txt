@@ -1,16 +1,16 @@
 # LULCkit
 
-> Open-source GeoTIFF cartography, Land Use / Land Cover (LULC) classification, spectral index, and area-reporting toolkit (MIT License).
+> Open-source GeoTIFF cartography, Land Use / Land Cover (LULC) classification, spectral index, and area-reporting toolkit (MIT License, v0.3.0).
 
 ## Live Services
 - Website & Client-Side Browser GeoTIFF Studio: https://madeshchkma.github.io/LULCkit/
 - Interactive Bogura 10m Demo Map: https://madeshchkma.github.io/LULCkit/demo/Bogura_Boro_Map_10m_2026_map.html
 - Cloud PyTorch ML Studio (Hugging Face Spaces ZeroGPU): https://huggingface.co/spaces/madeshchakma/LULCkit
-- Source Repository (Python CLI & Package): https://github.com/madeshchkma/LULCkit
+- Source Repository (Python CLI, QGIS Plugin, RustGIS Plugin): https://github.com/madeshchkma/LULCkit
 
 ## Core Capabilities
 - `lulc inspect <tif>`: Profiles CRS/WKT, GSD in meters, WGS84 bounds/centroid, COG layout, GDAL/TIFF tags, and band statistics.
-- `lulc map <tif>`: Runs O(1)-RAM tiled LULC inference (`rgb-oem` SegFormer-B4, `rgb-fast` SegFormer-B0, `s2-dw` Dynamic World, `categorical` pass-through) and exports colored GeoTIFFs, A4/A5/A3/Letter print maps (`png`/`pdf`/`svg`), CSV/JSON reports, GeoJSON polygons, and MapLibre GL JS HTML viewers.
-- `lulc bands <tif>`: Exports custom RGB composites (`true-color`, `false-color-nir`, `agriculture`, `swir`) and stream-computes `NDVI`, `NDWI`, `NDBI`, `SAVI`, and `EVI`.
+- `lulc map <tif>`: Runs O(1)-RAM tiled LULC inference (`rgb-oem` SegFormer-B4, `rgb-fast` SegFormer-B0, custom `--hf-model` via `AutoModelForSemanticSegmentation` for SegFormer/UPerNet/Mask2Former/DPT, `s2-dw` Dynamic World, `categorical` pass-through) with `--tta` 4-way flip augmentation and `--sieve-size` speckle removal, exporting COG GeoTIFFs with GDAL `.aux.xml` named legends, A4/A5/A3/Letter print maps (`png`/`pdf`/`svg`), CSV/JSON reports, GeoJSON polygons, and MapLibre GL JS HTML viewers.
+- `lulc bands <tif>`: Exports custom RGB composites, multi-band subset COGs, visual 8-bit RGB COGs, stacked Sentinel-2/Landsat SAFE folders, and stream-computes `NDVI`, `NDWI`, `MNDWI`, `NDBI`, `SAVI`, `EVI`, and `NBR`.
 - `lulc clip <tif> <geojson>`: Clips georeferenced rasters to polygon boundaries preserving colormaps and tags.
-- Browser Studio (`docs/`): 100% client-side inspection, categorical palette styling, spectral indices, MapLibre overlays, and PNG/CSV/JSON export via `geotiff.js`, `proj4`, and HTML5 Canvas.
+- Plugins & Browser Studio (`docs/`): Native QGIS Processing plugin (`qgis_plugin/`), RustGIS plugin (`rustgis_plugin/`), and 100% client-side Browser Studio via `geotiff.js`, `proj4`, and HTML5 Canvas.

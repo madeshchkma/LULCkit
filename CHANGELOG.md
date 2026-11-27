@@ -5,6 +5,21 @@ All notable changes to `LULCkit` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-11-27
+
+### Added
+- Broader Hugging Face segmentation support via `AutoModelForSemanticSegmentation` (SegFormer, UPerNet, Mask2Former, DPT) and `post_process_semantic_segmentation` query-head fallback in `HFSegFormerModel`.
+- 4-way flip Test-Time Augmentation (`--tta`), CUDA `torch.amp.autocast`, and bounded in-memory model caching for Hugging Face and Dynamic World inference.
+- Tile-level `O(1)`-RAM speckle filtering (`--sieve-size`) via `rasterio.features.sieve`.
+- Synced Hugging Face Spaces ZeroGPU UI (`spaces/app.py`), RustGIS plugin (`tta`, `sieveSize`, updated `hfModel`), and GitHub Pages Browser Studio (`MNDWI`, `NBR`) with `v0.3.0`.
+
+## [0.2.0] - 2026-11-27
+
+### Added
+- Cloud-Optimized GeoTIFF (`COG`) outputs with GDAL `.aux.xml` Raster Attribute Tables / named legends (`write_gdal_category_aux_xml`).
+- Additional spectral indices (`MNDWI` and `NBR`), multi-band subset COG export, visual 8-bit RGB COG export, and Sentinel-2 / Landsat folder band stacking (`lulc bands --stack-dir`).
+- Official RustGIS plugin (`rustgis_plugin/`) with `LULCkit` ribbon tab, Processing tools, and `.rgplugin` package builder.
+
 ## [0.1.0] - 2026-11-24
 
 ### Added

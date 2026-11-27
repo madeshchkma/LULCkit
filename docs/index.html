@@ -51,7 +51,7 @@
         "applicationCategory": "DeveloperApplication",
         "applicationSubCategory": "GIS / Remote Sensing Software",
         "operatingSystem": "Windows, macOS, Linux, Web Browser",
-        "softwareVersion": "0.1.0",
+        "softwareVersion": "0.3.0",
         "license": "https://opensource.org/licenses/MIT",
         "url": "https://madeshchkma.github.io/LULCkit/",
         "codeRepository": "https://github.com/madeshchkma/LULCkit",
@@ -68,10 +68,10 @@
         },
         "featureList": [
           "Client-side Browser GeoTIFF inspection, categorical palette styling, and print canvas export",
-          "Pretrained Sentinel-2 Dynamic World and SegFormer RGB Land Use / Land Cover models",
-          "NDVI, NDWI, NDBI, SAVI, and EVI spectral index streaming",
+          "Pretrained Sentinel-2 Dynamic World and Hugging Face AutoModelForSemanticSegmentation models (SegFormer, UPerNet, Mask2Former, DPT) with 4-way flip TTA and speckle sieve",
+          "NDVI, NDWI, MNDWI, NDBI, SAVI, EVI, and NBR spectral index streaming plus multi-band COG exports",
           "Publication A4/A5/A3/Letter print cartography with X/Y coordinate grids, compass arrows, and ArcGIS scale bars",
-          "Self-contained interactive MapLibre GL JS HTML map export"
+          "Native QGIS Processing plugin, RustGIS plugin, and self-contained MapLibre GL JS HTML map export"
         ]
       },
       {
@@ -139,7 +139,7 @@
       <a class="brand-link" href="#">
         <img class="brand-icon" src="assets/favicon.svg" alt="LULCkit logo" width="34" height="34" />
         <span class="brand-wordmark">LULC<span>kit</span></span>
-        <span class="version-pill">v0.1.0</span>
+        <span class="version-pill">v0.3.0</span>
       </a>
 
       <nav class="nav-links" aria-label="Primary navigation">
@@ -254,7 +254,7 @@
             <select id="modeSelect">
               <option value="categorical">Categorical / LULC Map</option>
               <option value="rgb">RGB Band Composite</option>
-              <option value="index">Spectral Index (NDVI / NDWI / NDBI)</option>
+              <option value="index">Spectral Index (NDVI / NDWI / MNDWI / NDBI / NBR)</option>
             </select>
           </div>
 
@@ -305,7 +305,9 @@
               <select id="indexType">
                 <option value="ndvi">NDVI = (Band A - Band B) / (Band A + Band B)</option>
                 <option value="ndwi">NDWI = (Band A - Band B) / (Band A + Band B)</option>
+                <option value="mndwi">MNDWI = (Green - SWIR1) / (Green + SWIR1)</option>
                 <option value="ndbi">NDBI = (Band A - Band B) / (Band A + Band B)</option>
+                <option value="nbr">NBR = (NIR - SWIR2) / (NIR + SWIR2)</option>
               </select>
             </div>
             <div class="field-row">
@@ -442,7 +444,7 @@
               <span class="dot-amber"></span>
               <span class="dot-green"></span>
             </div>
-            <span class="video-topbar-title">LULCkit v0.1.0 — Guided Video Tour</span>
+            <span class="video-topbar-title">LULCkit v0.3.0 — Guided Video Tour</span>
             <span class="video-spec-pill">HD 720p · Audio + Captions</span>
           </div>
           <div class="video-player-box" id="videoPlayerBox">
@@ -550,17 +552,17 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
           </div>
           <h3>ML &amp; Categorical Styling</h3>
-          <p>Auto-routes Sentinel-2 (<code>s2-dw</code>), high-res RGB (<code>rgb-oem</code>, <code>rgb-fast</code>), or zero-ML pre-classified maps (<code>categorical</code>).</p>
-          <code class="cap-cmd">lulc map --model auto</code>
+          <p>Auto-routes Sentinel-2 (<code>s2-dw</code>), high-res RGB (<code>rgb-oem</code>, <code>rgb-fast</code>, or custom HF <code>AutoModelForSemanticSegmentation</code> via <code>--hf-model</code>) with <code>--tta</code> &amp; <code>--sieve-size</code>, or zero-ML COGs (<code>categorical</code>).</p>
+          <code class="cap-cmd">lulc map --model auto --tta --sieve-size 16</code>
         </article>
 
         <article class="cap-card">
           <div class="cap-icon" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
           </div>
-          <h3>Bands &amp; Spectral Indices</h3>
-          <p>Render true/false-color NIR, agriculture, or custom 3-band RGB composites, and stream-compute <code>NDVI</code>, <code>NDWI</code>, <code>NDBI</code>, <code>SAVI</code>, and <code>EVI</code>.</p>
-          <code class="cap-cmd">lulc bands --index ndvi</code>
+          <h3>Bands, COGs &amp; Spectral Indices</h3>
+          <p>Export multi-band subset COGs, visual 8-bit RGB COGs, stack Sentinel-2/Landsat folders, and compute <code>NDVI</code>, <code>NDWI</code>, <code>MNDWI</code>, <code>NDBI</code>, <code>SAVI</code>, <code>EVI</code>, and <code>NBR</code>.</p>
+          <code class="cap-cmd">lulc bands --index mndwi</code>
         </article>
 
         <article class="cap-card">
@@ -652,11 +654,11 @@
           <h3>Python CLI (<code>lulckit</code> / <code>lulc</code>)</h3>
           <p>Full O(1)-RAM tiled pipeline for large rasters, vector GeoJSON polygons, 300 DPI PDF/SVG maps, and batch folders.</p>
           <ul class="runtime-list">
-            <li>Pretrained <code>s2-dw</code>, <code>rgb-oem</code>, and <code>rgb-fast</code> ML models</li>
-            <li><code>NDVI</code>, <code>NDWI</code>, <code>NDBI</code>, <code>SAVI</code>, and <code>EVI</code> GeoTIFF export</li>
-            <li>Exact <code>pyproj.Geod</code> geodesic area for <code>EPSG:4326</code></li>
+            <li>Pretrained <code>s2-dw</code>, <code>rgb-oem</code>, <code>rgb-fast</code> &amp; custom <code>--hf-model</code> + <code>--tta</code> / <code>--sieve-size</code></li>
+            <li><code>NDVI</code>, <code>NDWI</code>, <code>MNDWI</code>, <code>NDBI</code>, <code>SAVI</code>, <code>EVI</code>, <code>NBR</code> &amp; multi-band COG export</li>
+            <li>Exact <code>pyproj.Geod</code> geodesic area for <code>EPSG:4326</code> + QGIS &amp; RustGIS plugins</li>
           </ul>
-          <pre class="code-block">lulc map scene.tif -o ./out --vector --html</pre>
+          <pre class="code-block">lulc map scene.tif -o ./out --tta --sieve-size 16 --vector --html</pre>
         </article>
 
         <article class="card runtime-card">
@@ -676,9 +678,9 @@
           <h3>Hugging Face Spaces Studio</h3>
           <p>Hosted Gradio web UI powered by the full Python <code>lulckit</code> engine and PyTorch GPU acceleration in the cloud.</p>
           <ul class="runtime-list">
-            <li>Run <code>rgb-oem</code>, <code>rgb-fast</code> &amp; <code>s2-dw</code> from any browser</li>
-            <li>Upload TIFFs for full <code>lulc bands</code> &amp; <code>inspect</code> reports</li>
-            <li>Download GeoTIFF colormaps, CSV, JSON, and HTML maps</li>
+            <li>Run <code>rgb-oem</code>, <code>rgb-fast</code>, <code>s2-dw</code>, or custom HF repos with TTA &amp; sieve</li>
+            <li>Upload TIFF/VRT/JP2 for multi-band COGs, <code>MNDWI</code>/<code>NBR</code> &amp; <code>inspect</code> reports</li>
+            <li>Download COG GeoTIFFs with GDAL legends, CSV, JSON, GeoJSON &amp; HTML maps</li>
           </ul>
           <a class="btn btn-primary btn-sm" href="https://huggingface.co/spaces/madeshchakma/LULCkit" target="_blank" rel="noopener">Launch Live Space (ZeroGPU)</a>
         </article>
@@ -697,6 +699,7 @@
         <span class="stack-chip">Dynamic World</span>
         <span class="stack-chip">MapLibre GL JS</span>
         <span class="stack-chip">GeoTIFF.js</span>
+        <span class="stack-chip">QGIS &amp; RustGIS Plugins</span>
       </div>
     </div>
   </section>
@@ -716,11 +719,11 @@
         </details>
         <details class="faq-item">
           <summary>What raster types and sensors does LULCkit support?</summary>
-          <p>LULCkit auto-detects and processes 9 to 13 band Sentinel-2 scenes (Dynamic World), high-resolution RGB aerial or satellite GeoTIFFs (SegFormer-B4 OpenEarthMap and SegFormer-B0 DeepGlobe), and single-band pre-classified discrete GeoTIFFs.</p>
+          <p>LULCkit auto-detects and processes 9 to 13 band Sentinel-2 scenes (Dynamic World), high-resolution RGB aerial or satellite GeoTIFFs (SegFormer-B4 OpenEarthMap, SegFormer-B0 DeepGlobe, or custom Hugging Face AutoModelForSemanticSegmentation models like UPerNet, Mask2Former, and DPT), and single-band pre-classified discrete GeoTIFFs.</p>
         </details>
         <details class="faq-item">
           <summary>Which export formats and map layouts are included?</summary>
-          <p>LULCkit exports styled uint8 GeoTIFFs with embedded GDAL colormaps and overviews, full-page A4, A5, A3, Letter, Legal, and Square print maps in PNG, PDF, or SVG at 300 DPI, interactive MapLibre GL JS HTML viewers, GeoJSON polygons, CSV area summaries, and JSON metadata reports.</p>
+          <p>LULCkit exports Cloud-Optimized uint8 GeoTIFFs with embedded GDAL colormaps, overviews, and .aux.xml named legends, multi-band subset COGs, visual 8-bit RGB COGs, full-page A4, A5, A3, Letter, Legal, and Square print maps in PNG, PDF, or SVG at 300 DPI, interactive MapLibre GL JS HTML viewers, GeoJSON polygons, CSV area summaries, and JSON metadata reports.</p>
         </details>
         <details class="faq-item">
           <summary>How does LULCkit calculate Land Use / Land Cover areas accurately?</summary>
@@ -785,6 +788,8 @@
           <h4>Documentation</h4>
           <ul>
             <li><a href="https://github.com/madeshchkma/LULCkit#readme" target="_blank" rel="noopener">CLI Documentation</a></li>
+            <li><a href="https://github.com/madeshchkma/LULCkit/tree/main/qgis_plugin" target="_blank" rel="noopener">QGIS Plugin</a></li>
+            <li><a href="https://github.com/madeshchkma/LULCkit/tree/main/rustgis_plugin" target="_blank" rel="noopener">RustGIS Plugin</a></li>
             <li><a href="https://github.com/madeshchkma/LULCkit/tree/main/examples/bogura_boro_2026" target="_blank" rel="noopener">Bogura 2026 Example</a></li>
             <li><a href="https://github.com/madeshchkma/LULCkit/tree/main/spaces" target="_blank" rel="noopener">Spaces Deployment</a></li>
           </ul>

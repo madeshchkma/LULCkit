@@ -28,10 +28,10 @@
 - **Zero-Config Sensor Fingerprinting (`lulc inspect`)**: Profiles any TIFF/GeoTIFF (CRS, WKT/Proj4, affine transform, GSD in meters, WGS84 bounds/centroid, compression/tiling/COG layout, GDAL/TIFF tags, per-band statistics, and auto-detected sensor type).
 - **Pretrained ML & Pre-Classified Support (`lulc map`)**:
   - **`rgb-oem`**: SegFormer-B4 (`nave1616/SegFormer-landcover-FT`, 9 OpenEarthMap classes) for high-res aerial, drone, satellite, or plain RGB TIFFs.
-  - **`rgb-fast`**: Lightweight SegFormer-B0 (`florian-morel22/segformer-b0-deepglobe-land-cover`, 7 DeepGlobe classes) for fast CPU inference (or pass any custom Hugging Face SegFormer via `--hf-model`).
+  - **`rgb-fast`**: Lightweight SegFormer-B0 (`florian-morel22/segformer-b0-deepglobe-land-cover`, 7 DeepGlobe classes) for fast CPU inference, or pass any custom Hugging Face semantic segmentation repo via `--hf-model` (`AutoModelForSemanticSegmentation`: SegFormer, UPerNet, Mask2Former, DPT), plus `--tta` (4-way flip TTA) and `--sieve-size` speckle removal.
   - **`s2-dw`**: Bit-exact PyTorch Dynamic World (`calebrob6/dynamic_world_pytorch`, 9 classes) for 9–13 band Sentinel-2 10m scenes.
-  - **`categorical`**: Zero-ML direct pass-through for pre-classified single-band integer GeoTIFFs (e.g., ESA WorldCover or custom crop maps) with embedded GDAL ColorTable and exact area analytics.
-- **Band & Spectral Index Toolkit (`lulc bands`)**: Inspect band roles, extract/stretch any single band or custom 3-band RGB composite (`--composite`, `--rgb-bands`), or stream-compute `NDVI`, `NDWI`, `NDBI`, `SAVI`, and `EVI`.
+  - **`categorical`**: Zero-ML direct pass-through for pre-classified single-band integer GeoTIFFs (e.g., ESA WorldCover or custom crop maps) exporting Cloud-Optimized GeoTIFFs (`COG`) with embedded GDAL ColorTable, `.aux.xml` named legends, and exact area analytics.
+- **Band & Spectral Index Toolkit (`lulc bands`)**: Inspect band roles, extract/stretch any single band, multi-band subset COG, visual 8-bit RGB COG, or custom 3-band composite (`--composite`, `--rgb-bands`), stack Sentinel-2/Landsat folders (`--stack-dir`), or stream-compute `NDVI`, `NDWI`, `MNDWI`, `NDBI`, `SAVI`, `EVI`, and `NBR`.
 - **GIS Cropping (`lulc clip`) & Batch Processing (`lulc batch`)**: Clip any GeoTIFF to a GeoJSON polygon boundary preserving colormaps and tags, or process entire directories of TIFFs in one command.
 - **Guided Interactive Mode (`lulc wizard`)**: Step-by-step interactive prompts that configure your map and print the exact reproducible `lulc map` command.
 - **Publication Print Cartography & GeoLibre-Inspired Web Maps**:
@@ -83,8 +83,8 @@ See [qgis_plugin/README.md](qgis_plugin/README.md) for Processing Toolbox usage 
 Build the `.rgplugin` package or install it from **Plugins › Plugin Manager › Browse** (`lulckit`) or the GitHub Release:
 
 ```bash
-python scripts/build_rustgis_plugin.py        # writes out/lulckit-0.2.0.rgplugin & out/lulckit.json
-rustgis-cli plugins install out/lulckit-0.2.0.rgplugin
+python scripts/build_rustgis_plugin.py --tag v0.3.0  # writes out/lulckit-0.3.0.rgplugin & out/lulckit.json
+rustgis-cli plugins install out/lulckit-0.3.0.rgplugin
 ```
 
 See [rustgis_plugin/README.md](rustgis_plugin/README.md) for details on tools, multi-band COG export/stacking, ribbon commands, and managed Python environment setup.
@@ -163,7 +163,7 @@ lulc bands sentinel2.tif --composite false-color-nir -o cir_map.png
 lulc bands sentinel2.tif --rgb-bands 8,4,3 --page-size a4 -o custom_rgb.png
 lulc bands sentinel2.tif --band 7 --palette viridis -o band7.png
 
-# Stream-compute NDVI / NDWI / NDBI / SAVI / EVI to GeoTIFF + full-page figure
+# Stream-compute NDVI / NDWI / MNDWI / NDBI / SAVI / EVI / NBR to GeoTIFF + full-page figure
 lulc bands sentinel2.tif --index ndvi -o ./out/ndvi.tif --preview-out ./out/ndvi.png
 
 # Pre-classified single-band raster -> ArcGIS-style A4/A5 print PDF + interactive HTML
@@ -174,8 +174,8 @@ lulc map classified.tif -o ./out/ \
   --page-size a4 --arrow-style compass --scalebar-style arcgis \
   --map-format pdf --html
 
-# High-res RGB GeoTIFF with fast CPU model + polygonized GeoJSON
-lulc map drone_rgb.tif -o ./out/ --model rgb-fast --vector --save-confidence
+# High-res RGB GeoTIFF with fast CPU model, TTA, speckle sieve, & polygonized GeoJSON
+lulc map drone_rgb.tif -o ./out/ --model rgb-fast --tta --sieve-size 16 --vector --save-confidence
 ```
 
 ---

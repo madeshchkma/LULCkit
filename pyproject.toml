@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lulckit"
-version = "0.2.0"
+version = "0.3.0"
 description = "Turn any optical or classified TIFF/GeoTIFF into GIS-ready LULC maps, band composites, spectral indices, and metadata reports."
 readme = "README.md"
 license = { text = "MIT" }

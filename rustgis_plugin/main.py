@@ -402,6 +402,8 @@ def _tool_lulc_map(req: Request) -> ToolOutput:
         rgb_bands = _parse_band_list(req.params.get("rgbBands"), 3) if str(req.params.get("rgbBands") or "").strip() else None
         s2_bands = _parse_band_list(req.params.get("s2Bands"), 9) if str(req.params.get("s2Bands") or "").strip() else None
         hf_model = str(req.params.get("hfModel") or "").strip() or None
+        tta = bool(req.params.get("tta", False))
+        sieve_size = max(0, int(req.params.get("sieveSize") or 0))
         labels_map = _parse_class_labels(req.params.get("classLabels"))
         colors_map = _parse_class_colors(req.params.get("classColors"))
         page_size = str(req.params.get("pageSize") or "a4")
@@ -437,6 +439,7 @@ def _tool_lulc_map(req: Request) -> ToolOutput:
                 rgb_bands=rgb_bands,
                 s2_bands=s2_bands,
                 hf_model=hf_model,
+                tta=tta,
                 class_labels=labels_map,
                 class_colors=colors_map,
                 palette=palette,
@@ -461,6 +464,7 @@ def _tool_lulc_map(req: Request) -> ToolOutput:
                 preprocess_mode=preprocess_mode,
                 output_lulc_path=lulc_tif_path,
                 output_conf_path=conf_tif_path,
+                sieve_size=sieve_size,
                 progress_callback=_on_progress,
             )
 
