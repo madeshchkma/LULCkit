@@ -8,11 +8,17 @@ from __future__ import annotations
 
 import os
 import urllib.request
+from collections import OrderedDict
+from contextlib import nullcontext
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
 from lulckit.models.base import BaseLULCModel, ClassSpec, color_for_label, get_cache_dir
+
+_DW_MODEL_CACHE: OrderedDict[tuple[str, str], Any] = OrderedDict()
+_MAX_DW_CACHE = 2
 
 
 SENTINEL2_BANDS = ("B2", "B3", "B4", "B5", "B6", "B7", "B8", "B11", "B12")
@@ -208,6 +214,7 @@ class DynamicWorldModel(BaseLULCModel):
         device: str = "cpu",
         scale_reflectance: bool = False,
         weights_path: Path | None = None,
+        tta: bool = False,
     ) -> None:
         import torch
 
@@ -217,6 +224,7 @@ class DynamicWorldModel(BaseLULCModel):
         self.expected_bands = 9
         self.optimal_gsd_m = "10m"
         self.scale_reflectance = scale_reflectance
+        self.tta = bool(tta)
         self.device = torch.device(device)
         self.classes = [
             ClassSpec(id=i, name=name, color=color_for_label(name, i))
@@ -224,12 +232,33 @@ class DynamicWorldModel(BaseLULCModel):
         ]
 
         resolved_weights = ensure_dynamic_world_weights(weights_path)
+        cache_key = (str(resolved_weights), str(self.device))
+        if cache_key in _DW_MODEL_CACHE:
+            _DW_MODEL_CACHE.move_to_end(cache_key)
+            self.model = _DW_MODEL_CACHE[cache_key]
+            return
+
         dw_cls = _build_dynamic_world_module()
-        self.model = dw_cls()
+        model = dw_cls()
         state = torch.load(resolved_weights, map_location=self.device, weights_only=True)
-        self.model.load_state_dict(state)
-        self.model.to(self.device)
-        self.model.eval()
+        model.load_state_dict(state)
+        model.to(self.device)
+        model.eval()
+        _DW_MODEL_CACHE[cache_key] = model
+        while len(_DW_MODEL_CACHE) > _MAX_DW_CACHE:
+            _DW_MODEL_CACHE.popitem(last=False)
+        self.model = model
+
+    def _predict_probs(self, normed: np.ndarray) -> Any:
+        tensor = self._torch.from_numpy(normed).to(self.device)
+        if self.device.type == "cuda":
+            dtype = self._torch.bfloat16 if self._torch.cuda.is_bf16_supported() else self._torch.float16
+            ctx = self._torch.amp.autocast("cuda", dtype=dtype)
+        else:
+            ctx = nullcontext()
+        with self._torch.inference_mode(), ctx:
+            logits = self.model(tensor)
+            return logits.float().softmax(dim=1)
 
     def predict_batch(self, tiles: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Predict class IDs and integer confidence ``0..100`` for ``(B, 9, H, W)`` float32."""
@@ -237,12 +266,19 @@ class DynamicWorldModel(BaseLULCModel):
             raise ValueError(f"Expected (B, 9, H, W) Sentinel-2 tiles, got {tiles.shape}")
 
         normed = normalize_sentinel2(tiles, scale_reflectance=self.scale_reflectance)
-        tensor = self._torch.from_numpy(normed).to(self.device)
-        with self._torch.inference_mode():
-            logits = self.model(tensor)
-            probs = logits.softmax(dim=1)
-            conf, pred = probs.max(dim=1)
+        probs = self._predict_probs(normed)
+        if self.tta:
+            aug_specs = (
+                (lambda a: a[:, :, :, ::-1], lambda p: self._torch.flip(p, dims=(-1,))),
+                (lambda a: a[:, :, ::-1, :], lambda p: self._torch.flip(p, dims=(-2,))),
+                (lambda a: a[:, :, ::-1, ::-1], lambda p: self._torch.flip(p, dims=(-2, -1))),
+            )
+            acc = probs
+            for fwd, inv in aug_specs:
+                acc = acc + inv(self._predict_probs(np.ascontiguousarray(fwd(normed))))
+            probs = acc / 4.0
 
+        conf, pred = probs.max(dim=1)
         labels_np = pred.cpu().numpy().astype(np.uint8)
         conf_np = (conf * 100.0).round().clamp(0, 100).cpu().numpy().astype(np.uint8)
         return labels_np, conf_np

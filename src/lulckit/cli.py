@@ -184,6 +184,8 @@ def _execute_map(
     save_confidence: bool = False,
     vector: bool = False,
     min_area_pixels: int = 4,
+    tta: bool = False,
+    sieve_size: int = 0,
     preview: bool = True,
     print_summary: bool = True,
 ) -> dict[str, Any]:
@@ -206,6 +208,7 @@ def _execute_map(
         class_colors=colors_map,
         nodata_value=nodata_value,
         palette=palette,
+        tta=tta,
     )
 
     stem = name.strip() if name and name.strip() else tiff_path.stem
@@ -244,6 +247,7 @@ def _execute_map(
             batch_size=batch_size,
             progress_callback=_on_progress,
             extra_nodata_value=nodata_value,
+            sieve_size=sieve_size,
         )
 
     spectral_indices: dict = {}
@@ -288,6 +292,8 @@ def _execute_map(
         "composite": composite_key,
         "page_size": page_size,
         "orientation": orientation,
+        "tta": bool(tta),
+        "sieve_size": int(sieve_size),
     }
 
     report = build_report(
@@ -689,11 +695,13 @@ def map_cmd(
     min_area_pixels: int = typer.Option(4, "--min-area-pixels", help="Minimum polygon size in pixels for --vector.", rich_help_panel="Outputs & Export"),
     save_confidence: bool = typer.Option(False, "--save-confidence", help="Write uint8 0-100% confidence GeoTIFF.", rich_help_panel="Outputs & Export"),
     model: str = typer.Option("auto", "--model", "-m", help="Model: auto, rgb-oem, rgb-fast, s2-dw, or categorical.", rich_help_panel="Model & Inference"),
-    hf_model: Optional[str] = typer.Option(None, "--hf-model", help="Custom Hugging Face SegFormer repo ID.", rich_help_panel="Model & Inference"),
+    hf_model: Optional[str] = typer.Option(None, "--hf-model", help="Custom Hugging Face semantic segmentation repo ID.", rich_help_panel="Model & Inference"),
     device: str = typer.Option("auto", "--device", help="Device: auto, cpu, cuda, or mps.", rich_help_panel="Model & Inference"),
     tile_size: int = typer.Option(512, "--tile-size", help="Inference tile size (multiple of 32, >= 64).", rich_help_panel="Model & Inference"),
     overlap: int = typer.Option(64, "--overlap", help="Halo overlap pixels discarded around each tile core.", rich_help_panel="Model & Inference"),
     batch_size: int = typer.Option(4, "--batch-size", help="Number of tiles per inference batch.", rich_help_panel="Model & Inference"),
+    tta: bool = typer.Option(False, "--tta", help="Enable 4-way flip Test-Time Augmentation for sharper ML boundaries.", rich_help_panel="Model & Inference"),
+    sieve_size: int = typer.Option(0, "--sieve-size", help="Remove isolated speckle regions smaller than N pixels (0 disables).", rich_help_panel="Model & Inference"),
     rgb_bands: Optional[str] = typer.Option(None, "--rgb-bands", help="1-based R,G,B bands (e.g. 1,2,3 or 4,3,2).", rich_help_panel="Bands & Styling"),
     s2_bands: Optional[str] = typer.Option(None, "--s2-bands", help="1-based 9 Sentinel-2 bands (B2,B3,B4,B5,B6,B7,B8,B11,B12).", rich_help_panel="Bands & Styling"),
     composite: Optional[str] = typer.Option(None, "--composite", help="Multiband display preset: true-color, false-color-nir, agriculture, or swir.", rich_help_panel="Bands & Styling"),
@@ -758,6 +766,8 @@ def map_cmd(
             save_confidence=save_confidence,
             vector=vector,
             min_area_pixels=min_area_pixels,
+            tta=tta,
+            sieve_size=sieve_size,
             preview=preview,
             print_summary=True,
         )

@@ -18,11 +18,11 @@ MODEL_REGISTRY: dict[str, dict[str, Any]] = {
     "rgb-oem": {
         "name": "rgb-oem",
         "repo_id": "nave1616/SegFormer-landcover-FT",
-        "architecture": "SegFormer-B4 (Hugging Face)",
+        "architecture": "SegFormer-B4 / HF AutoModelForSemanticSegmentation",
         "classes": "9 classes (OpenEarthMap + background)",
         "expected_bands": 3,
         "optimal_gsd_m": "0.25-2.0m",
-        "description": "High-resolution RGB/aerial/drone/satellite land cover segmentation (OpenEarthMap taxonomy).",
+        "description": "High-resolution RGB/aerial/drone/satellite land cover segmentation (OpenEarthMap or custom --hf-model).",
     },
     "rgb-fast": {
         "name": "rgb-fast",
@@ -147,6 +147,7 @@ def select_model(
     class_colors: dict[int, tuple[int, int, int]] | None = None,
     nodata_value: int | None = None,
     palette: str = "default",
+    tta: bool = False,
 ) -> tuple[BaseLULCModel, list[int], str, list[str]]:
     """Select and instantiate the appropriate model, input band indices, and preprocess mode."""
     warnings_out = list(profile.warnings)
@@ -232,7 +233,7 @@ def select_model(
             warnings_out.append(
                 "Detected Sentinel-2 float reflectance in [0..2]; scaling by 10000x for Dynamic World normalization."
             )
-        model = DynamicWorldModel(device=resolved_dev, scale_reflectance=scale_refl)
+        model = DynamicWorldModel(device=resolved_dev, scale_reflectance=scale_refl, tta=tta)
         _apply_class_overrides(model, palette, class_labels, class_colors)
         return model, chosen_s2, "s2", warnings_out
 
@@ -256,6 +257,7 @@ def select_model(
             device=resolved_dev,
             description=meta["description"],
             optimal_gsd_m=meta["optimal_gsd_m"],
+            tta=tta,
         )
         _apply_class_overrides(model, palette, class_labels, class_colors)
         return model, chosen_rgb, "rgb", warnings_out

@@ -83,6 +83,7 @@ def run_tiled_inference(
     batch_size: int = 4,
     progress_callback: Callable[[int, int], None] | None = None,
     extra_nodata_value: int | None = None,
+    sieve_size: int = 0,
 ) -> InferenceStats:
     """Run O(1)-RAM sliding-window LULC inference and stream GeoTIFF outputs to disk."""
     if tile_size < 64 or tile_size % 32 != 0:
@@ -259,8 +260,21 @@ def run_tiled_inference(
                             core_h = int(core_win.height)
                             row_off = int(core_win.row_off)
 
-                            core_pred = pred_batch[
-                                idx, eff_overlap : eff_overlap + core_h, eff_overlap : eff_overlap + core_w
+                            if sieve_size >= 2:
+                                from rasterio.features import sieve
+
+                                # ponytail: tile-local sieve over overlap halo keeps O(1)-RAM streaming;
+                                # upgrade to full-raster post-pass sieve if multi-tile speckle continuity is required.
+                                pred_tile = sieve(
+                                    np.ascontiguousarray(pred_batch[idx], dtype=np.uint8),
+                                    size=int(sieve_size),
+                                    connectivity=4,
+                                )
+                            else:
+                                pred_tile = pred_batch[idx]
+
+                            core_pred = pred_tile[
+                                eff_overlap : eff_overlap + core_h, eff_overlap : eff_overlap + core_w
                             ].copy()
                             core_conf = conf_batch[
                                 idx, eff_overlap : eff_overlap + core_h, eff_overlap : eff_overlap + core_w

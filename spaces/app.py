@@ -24,8 +24,10 @@ if _REPO_SRC.is_dir() and str(_REPO_SRC) not in sys.path:
     sys.path.insert(0, str(_REPO_SRC))
 
 from lulckit.bands import (  # noqa: E402
+    export_band_subset,
     export_band_view,
     export_spectral_index,
+    export_visual_rgb_cog,
 )
 from lulckit.cartography import resolve_composite_bands  # noqa: E402
 from lulckit.cli import (  # noqa: E402
@@ -39,7 +41,7 @@ from lulckit.inspect import inspect_tiff  # noqa: E402
 
 def _normalize_file_path(file_input: Any) -> Path:
     if file_input is None:
-        raise ValueError("Please upload a .tif or .tiff GeoTIFF file.")
+        raise ValueError("Please upload a .tif, .tiff, .vrt, or .jp2 raster file.")
     if isinstance(file_input, (str, Path)):
         p = Path(file_input)
     else:
@@ -75,6 +77,10 @@ def run_map_space(
     file_input: Any,
     *,
     model: str = "auto",
+    hf_model: str = "",
+    rgb_bands: str = "",
+    tta: bool = False,
+    sieve_size: int = 0,
     title: str = "",
     palette: str = "arcgis-crop",
     class_labels: str = "",
@@ -95,13 +101,16 @@ def run_map_space(
     nd_val: int | None = int(nodata_value.strip()) if nodata_value and nodata_value.strip() else None
     labels_map = _parse_class_labels(class_labels.strip() or None)
     colors_map = _parse_class_colors(class_colors.strip() or None)
+    rgb_list = _parse_band_list(rgb_bands.strip() or None, 3, "rgb_bands")
 
     report = _execute_map(
         tiff_path,
         output_dir=work_dir,
         title=title.strip() or None,
         model=model.strip() or "auto",
+        hf_model=hf_model.strip() or None,
         device="auto",
+        rgb_list=rgb_list,
         palette=palette.strip() or "default",
         labels_map=labels_map,
         colors_map=colors_map,
@@ -115,6 +124,8 @@ def run_map_space(
         dpi=200,
         html=bool(export_html),
         vector=bool(export_vector),
+        tta=bool(tta),
+        sieve_size=max(0, int(sieve_size or 0)),
         print_summary=False,
     )
 
@@ -153,8 +164,8 @@ def run_bands_space(
     cmap_name: str = "viridis",
     title: str = "",
     page_size: str = "a4",
-) -> tuple[str, str, str]:
-    """Run LULCkit bands/index export in a temporary folder."""
+) -> tuple[str | None, str, str]:
+    """Run LULCkit bands/index/COG export in a temporary folder."""
     tiff_path = _normalize_file_path(file_input)
     profile = inspect_tiff(tiff_path)
     work_dir = Path(tempfile.mkdtemp(prefix="lulckit_bands_"))
@@ -178,6 +189,35 @@ def run_bands_space(
             f"Computed **{index_name.upper()}**: `min={stats['min']}`, `max={stats['max']}`, "
             f"`mean={stats['mean']}`, `std={stats['std']}` ({stats['valid_pixels']:,} valid pixels)"
         )
+        return str(out_png), str(out_tif), msg
+
+    if mode == "Multi-Band Subset COG":
+        raw_tok = rgb_bands.strip()
+        chosen = [int(t.strip()) for t in raw_tok.split(",") if t.strip()] if raw_tok else None
+        info = export_band_subset(tiff_path, profile, chosen, out_tif, cog=True)
+        msg = (
+            f"Exported **{info['band_count']}-band COG** (`bands={info['bands']}`, "
+            f"`dtype={info['dtype']}`) with `CENTRAL_WAVELENGTH_UM` metadata."
+        )
+        return None, str(out_tif), msg
+
+    if mode == "Visual 8-bit RGB COG":
+        raw_tok = rgb_bands.strip()
+        if raw_tok:
+            chosen = _parse_band_list(raw_tok, 3, "rgb_bands") or [1, 2, 3]
+        else:
+            chosen, _ = resolve_composite_bands(profile, composite_name)
+        info = export_visual_rgb_cog(tiff_path, profile, chosen, out_tif, cog=True)
+        export_band_view(
+            input_path=tiff_path,
+            profile=profile,
+            band_indices=chosen,
+            output_preview=out_png,
+            title=title.strip() or f"{profile.file_name} — Visual RGB {chosen}",
+            page_size=page_size,
+            dpi=200,
+        )
+        msg = f"Exported **8-bit visual RGBA COG** (`bands={info['bands']}`)."
         return str(out_png), str(out_tif), msg
 
     if mode == "Optical Composite":
@@ -207,6 +247,10 @@ def run_bands_space(
 def _gradio_run_map(
     f: Any,
     m: str,
+    hf_m: str,
+    rgb_b: str,
+    tta_on: bool,
+    sieve_px: float | int | None,
     t: str,
     p: str,
     l: str,
@@ -223,6 +267,10 @@ def _gradio_run_map(
     return run_map_space(
         f,
         model=m,
+        hf_model=hf_m,
+        rgb_bands=rgb_b,
+        tta=bool(tta_on),
+        sieve_size=int(sieve_px or 0),
         title=t,
         palette=p,
         class_labels=l,
@@ -248,7 +296,7 @@ def _gradio_run_bands(
     cm: str,
     t: str,
     ps: str,
-) -> tuple[str, str, str]:
+) -> tuple[str | None, str, str]:
     return run_bands_space(
         f,
         mode=md,
@@ -266,18 +314,31 @@ def build_app() -> Any:
     """Construct the Gradio Blocks UI (imports gradio lazily for headless testing)."""
     import gradio as gr
 
+    raster_exts = [".tif", ".tiff", ".vrt", ".jp2"]
     with gr.Blocks(title="LULCkit Studio", theme=gr.themes.Soft()) as demo:
         gr.Markdown(
             "# LULCkit Studio\n"
-            "Upload any optical (RGB / Sentinel-2) or pre-classified categorical `.tif` / `.tiff` GeoTIFF to generate "
-            "publication print maps, GeoTIFF colormaps, spectral indices, and area analytics."
+            "Upload any optical (RGB / Sentinel-2 / Landsat) or pre-classified categorical `.tif` / `.tiff` / `.jp2` "
+            "to generate Cloud-Optimized LULC GeoTIFFs, publication print maps, spectral indices, and area analytics."
         )
 
         with gr.Tab("LULC Map Generator"):
             with gr.Row():
                 with gr.Column(scale=1):
-                    map_file = gr.File(label="Upload TIFF / GeoTIFF", file_types=[".tif", ".tiff"])
+                    map_file = gr.File(label="Upload GeoTIFF / JP2 / VRT", file_types=raster_exts)
                     map_model = gr.Dropdown(["auto", "categorical", "rgb-fast", "rgb-oem", "s2-dw"], value="auto", label="Model")
+                    with gr.Accordion("Hugging Face Model & Quality Options", open=False):
+                        map_hf_model = gr.Textbox(
+                            label="Custom Hugging Face Model ID (optional)",
+                            placeholder="e.g. nvidia/segformer-b2-finetuned-ade-512-512",
+                        )
+                        map_rgb_bands = gr.Textbox(
+                            label="Custom RGB Bands (1-based, optional)",
+                            placeholder="e.g. 4,3,2",
+                        )
+                        with gr.Row():
+                            map_tta = gr.Checkbox(value=False, label="4-Way TTA (sharper edges)")
+                            map_sieve = gr.Number(value=0, precision=0, label="Speckle Sieve (min px, 0=off)")
                     map_title = gr.Textbox(label="Map Title (optional)", placeholder="Boro Area Mapping for Bogura - 2026")
                     map_palette = gr.Dropdown(["arcgis-crop", "default", "vivid", "earth", "pastel", "colorblind"], value="arcgis-crop", label="Palette")
                     map_labels = gr.Textbox(label="Class Labels (id:Name,...)", placeholder="0:Non Boro,1:Early Boro,2:Late Boro")
@@ -298,7 +359,7 @@ def build_app() -> Any:
                 with gr.Column(scale=2):
                     out_preview = gr.Image(label="Publication Map Preview", type="filepath")
                     with gr.Row():
-                        out_tif = gr.File(label="LULC GeoTIFF")
+                        out_tif = gr.File(label="LULC GeoTIFF (COG)")
                         out_csv = gr.File(label="Summary CSV")
                         out_json_file = gr.File(label="Report JSON")
                         out_html = gr.File(label="Interactive HTML Map")
@@ -311,7 +372,8 @@ def build_app() -> Any:
             map_btn.click(
                 fn=_gradio_run_map,
                 inputs=[
-                    map_file, map_model, map_title, map_palette, map_labels, map_colors, map_nodata,
+                    map_file, map_model, map_hf_model, map_rgb_bands, map_tta, map_sieve,
+                    map_title, map_palette, map_labels, map_colors, map_nodata,
                     map_page, map_ori, map_arrow, map_scale, map_grid, map_html, map_vec,
                 ],
                 outputs=[out_preview, out_tif, out_csv, out_json_file, out_html, out_table, out_report],
@@ -320,11 +382,22 @@ def build_app() -> Any:
         with gr.Tab("Bands & Spectral Indices"):
             with gr.Row():
                 with gr.Column(scale=1):
-                    b_file = gr.File(label="Upload Optical GeoTIFF", file_types=[".tif", ".tiff"])
-                    b_mode = gr.Radio(["Spectral Index", "Optical Composite", "Custom 3-Band RGB", "Single Band"], value="Spectral Index", label="Operation")
-                    b_index = gr.Dropdown(["ndvi", "ndwi", "ndbi", "savi", "evi"], value="ndvi", label="Spectral Index")
+                    b_file = gr.File(label="Upload Optical GeoTIFF / JP2", file_types=raster_exts)
+                    b_mode = gr.Radio(
+                        [
+                            "Spectral Index",
+                            "Optical Composite",
+                            "Custom 3-Band RGB",
+                            "Single Band",
+                            "Multi-Band Subset COG",
+                            "Visual 8-bit RGB COG",
+                        ],
+                        value="Spectral Index",
+                        label="Operation",
+                    )
+                    b_index = gr.Dropdown(["ndvi", "ndwi", "mndwi", "ndbi", "savi", "evi", "nbr"], value="ndvi", label="Spectral Index")
                     b_comp = gr.Dropdown(["true-color", "false-color-nir", "agriculture", "swir"], value="false-color-nir", label="Optical Composite")
-                    b_rgb = gr.Textbox(value="1,2,3", label="Custom RGB Bands (1-based)")
+                    b_rgb = gr.Textbox(value="1,2,3", label="Bands (3 for RGB, or comma-separated for Multi-Band Subset)")
                     b_single = gr.Number(value=1, precision=0, label="Single Band Index (1-based)")
                     b_cmap = gr.Dropdown(["auto", "viridis", "RdYlGn", "Blues", "RdBu", "gray"], value="auto", label="Colormap")
                     b_title = gr.Textbox(label="Map Title (optional)")
@@ -332,7 +405,7 @@ def build_app() -> Any:
                     b_btn = gr.Button("Process Bands", variant="primary")
                 with gr.Column(scale=2):
                     b_preview = gr.Image(label="Rendered Output", type="filepath")
-                    b_tif = gr.File(label="Output GeoTIFF")
+                    b_tif = gr.File(label="Output GeoTIFF (COG)")
                     b_msg = gr.Markdown()
 
             b_btn.click(
@@ -342,7 +415,7 @@ def build_app() -> Any:
             )
 
         with gr.Tab("TIFF Inspector"):
-            ins_file = gr.File(label="Upload TIFF / GeoTIFF", file_types=[".tif", ".tiff"])
+            ins_file = gr.File(label="Upload TIFF / GeoTIFF / JP2 / VRT", file_types=raster_exts)
             ins_btn = gr.Button("Inspect Metadata & Bands", variant="primary")
             ins_md = gr.Markdown()
             ins_json = gr.JSON(label="Full Geospatial JSON Profile")
