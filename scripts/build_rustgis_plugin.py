@@ -67,6 +67,15 @@ def check_local(manifest: dict, archive_names: set[str], tag: str | None = None)
     for excluded in ("lulckit/cli.py", "lulckit/__main__.py"):
         if excluded in archive_names:
             problems.append(f"excluded CLI file present in package: {excluded}")
+    for section in ("commands", "tools"):
+        for item in manifest.get(section, []):
+            params = item.get("form") if section == "commands" else item.get("params")
+            if isinstance(params, list):
+                for param in params:
+                    if isinstance(param, dict) and param.get("kind") == "boolean":
+                        problems.append(
+                            f'{item.get("id", section)}.{param.get("name")}: use "bool" instead of "boolean"'
+                        )
     return problems
 
 

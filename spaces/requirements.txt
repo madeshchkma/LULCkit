@@ -1,2 +1,2 @@
 pydantic==2.10.6
-git+https://github.com/madeshchkma/LULCkit.git
+git+https://github.com/madeshchkma/LULCkit.git@v0.3.0

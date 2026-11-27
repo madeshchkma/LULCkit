@@ -128,7 +128,7 @@
           "name": "tta",
           "label": "4-way flip TTA",
           "help": "Average predictions over 4 flip augmentations for cleaner edges (slower)",
-          "kind": "boolean",
+          "kind": "bool",
           "default": false
         },
         {
