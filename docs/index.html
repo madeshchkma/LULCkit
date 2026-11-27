@@ -32,7 +32,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.3.0/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="styles.css" />
 
   <script type="application/ld+json">
@@ -481,7 +481,7 @@
           <div class="tabs">
             <div class="tab-buttons">
               <button class="tab-btn active" id="tabPrintBtn" type="button">Print Map</button>
-              <button class="tab-btn" id="tabWebMapBtn" type="button">Interactive Web Map</button>
+              <button class="tab-btn" id="tabWebMapBtn" type="button">Interactive World Map (3D Globe)</button>
             </div>
             <div class="export-buttons">
               <button class="btn btn-sm" id="downloadPngBtn" type="button" disabled>Download PNG</button>
@@ -519,8 +519,9 @@
                 <p class="loader-stage" id="loaderStage">Reading binary TIFF stream...</p>
                 <div class="loader-bar-row">
                   <div class="loader-bar-track"><div class="loader-bar-fill" id="loaderBarFill"></div></div>
-                  <span class="loader-pct" id="loaderPct">15%</span>
+                  <span class="loader-pct" id="loaderPct">0%</span>
                 </div>
+                <p class="loader-meta" id="loaderMeta">Preparing workspace · 0.0s</p>
                 <div class="loader-steps">
                   <span class="loader-step is-active" data-step="1">1. Read</span>
                   <span class="loader-step" data-step="2">2. Profile</span>
@@ -536,15 +537,30 @@
 
             <div id="webMapView" class="webmap-wrap hidden">
               <div id="webMap"></div>
+              <form class="map-search-bar" id="mapSearchForm" role="search">
+                <input id="mapSearchInput" type="text" placeholder="Search city, country, or lat, lon..." aria-label="Search world map location" />
+                <button class="btn btn-sm btn-primary" id="mapSearchBtn" type="submit">Go</button>
+              </form>
               <div class="map-overlay-ctrl">
-                <label for="basemapSelect" style="font-weight:600;display:block;margin-bottom:4px;">Basemap</label>
+                <label for="projSelect" style="font-weight:600;display:block;margin-bottom:4px;">Projection (GeoLibre)</label>
+                <select id="projSelect" style="width:100%;margin-bottom:8px;padding:4px;">
+                  <option value="globe" selected>3D Globe</option>
+                  <option value="mercator">2D Mercator</option>
+                </select>
+                <label for="basemapSelect" style="font-weight:600;display:block;margin-bottom:4px;">World Basemap</label>
                 <select id="basemapSelect" style="width:100%;margin-bottom:8px;padding:4px;">
-                  <option value="positron" selected>Carto Positron Light</option>
+                  <option value="voyager" selected>Carto Voyager (World)</option>
+                  <option value="esri">Esri World Imagery (Satellite)</option>
+                  <option value="positron">Carto Positron Light</option>
                   <option value="dark">Carto Dark Matter</option>
                   <option value="osm">OpenStreetMap</option>
-                  <option value="esri">Esri World Imagery</option>
                   <option value="esri_topo">Esri World Topo</option>
+                  <option value="opentopo">OpenTopoMap</option>
                 </select>
+                <label class="check-row" style="margin-bottom:6px;font-size:12px;">
+                  <input id="layerVisCheck" type="checkbox" checked />
+                  Show Raster Overlay
+                </label>
                 <label for="resampleSelect" style="font-weight:600;display:block;margin-bottom:4px;">Resampling</label>
                 <select id="resampleSelect" style="width:100%;margin-bottom:8px;padding:4px;">
                   <option value="nearest" selected>Nearest Neighbor (Crisp)</option>
@@ -552,9 +568,13 @@
                 </select>
                 <label for="opacitySlider" style="font-weight:600;display:block;">Layer Opacity: <span id="opacityVal">85%</span></label>
                 <input id="opacitySlider" type="range" min="0" max="100" value="85" style="width:100%;" />
-                <button class="btn btn-sm" id="zoomLayerBtn" type="button" style="width:100%;margin-top:8px;">Zoom to Layer Extent</button>
+                <div class="map-btn-row">
+                  <button class="btn btn-sm" id="zoomWorldBtn" type="button">World View</button>
+                  <button class="btn btn-sm" id="zoomLayerBtn" type="button">Zoom to Layer</button>
+                </div>
               </div>
-              <div class="map-coords" id="mapCoords">Move cursor over map</div>
+              <div class="map-legend hidden" id="mapLegend"></div>
+              <div class="map-coords" id="mapCoords">Interactive 3D Globe · Move cursor or search location</div>
             </div>
           </div>
 
@@ -1053,7 +1073,7 @@
     </div>
   </dialog>
 
-  <script defer src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script defer src="https://unpkg.com/maplibre-gl@5.3.0/dist/maplibre-gl.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
   <script defer src="app.js"></script>

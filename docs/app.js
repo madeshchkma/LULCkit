@@ -170,6 +170,10 @@
   };
 
   const BASEMAP_TILES = {
+    voyager: {
+      tiles: ["https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"],
+      attribution: "&copy; OpenStreetMap &copy; CARTO",
+    },
     positron: {
       tiles: ["https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"],
       attribution: "&copy; OpenStreetMap &copy; CARTO",
@@ -189,6 +193,10 @@
     esri_topo: {
       tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"],
       attribution: "Tiles &copy; Esri",
+    },
+    opentopo: {
+      tiles: ["https://a.tile.opentopomap.org/{z}/{x}/{y}.png"],
+      attribution: "&copy; OpenStreetMap &copy; OpenTopoMap",
     },
   };
 
@@ -433,34 +441,119 @@
     });
   }
 
+  const loaderAnim = {
+    rafId: null,
+    active: false,
+    currentPct: 0,
+    targetPct: 0,
+    creepCeil: 0,
+    startTime: 0,
+    metaText: "",
+  };
+
   function yieldFrame() {
-    return new Promise((resolve) => {
-      requestAnimationFrame(() => setTimeout(resolve, 35));
-    });
+    return new Promise((resolve) => requestAnimationFrame(resolve));
   }
 
-  function showStudioLoader(title, stage, pct, stepIndex = 1) {
+  function _paintLoaderUi() {
+    const rounded = Math.max(0, Math.min(100, Math.round(loaderAnim.currentPct)));
+    if ($("loaderBarFill")) $("loaderBarFill").style.width = `${loaderAnim.currentPct.toFixed(1)}%`;
+    if ($("loaderPct")) $("loaderPct").textContent = `${rounded}%`;
+    if ($("loaderMeta")) {
+      const elapsed = ((performance.now() - loaderAnim.startTime) / 1000).toFixed(1);
+      $("loaderMeta").textContent = loaderAnim.metaText ? `${loaderAnim.metaText} · ${elapsed}s` : `Elapsed ${elapsed}s`;
+    }
+  }
+
+  function _tickLoader() {
+    if (!loaderAnim.active) return;
+    if (loaderAnim.targetPct < loaderAnim.creepCeil) {
+      loaderAnim.targetPct += (loaderAnim.creepCeil - loaderAnim.targetPct) * 0.018;
+    }
+    loaderAnim.currentPct += (loaderAnim.targetPct - loaderAnim.currentPct) * 0.16;
+    _paintLoaderUi();
+    loaderAnim.rafId = requestAnimationFrame(_tickLoader);
+  }
+
+  function startStudioLoader(title, stage) {
     const loader = $("studioLoader");
+    loaderAnim.active = true;
+    loaderAnim.currentPct = 2;
+    loaderAnim.targetPct = 8;
+    loaderAnim.creepCeil = 28;
+    loaderAnim.startTime = performance.now();
+    loaderAnim.metaText = "Starting pipeline";
     if (loader) {
-      loader.classList.remove("hidden");
+      loader.classList.remove("hidden", "is-fading");
       if (title && $("loaderTitle")) $("loaderTitle").textContent = title;
       if (stage && $("loaderStage")) $("loaderStage").textContent = stage;
-      const clamped = Math.max(4, Math.min(100, Math.round(pct)));
-      if ($("loaderBarFill")) $("loaderBarFill").style.width = `${clamped}%`;
-      if ($("loaderPct")) $("loaderPct").textContent = `${clamped}%`;
+      document.querySelectorAll("#studioLoader .loader-step").forEach((el) => {
+        const s = Number(el.dataset.step || 0);
+        el.classList.remove("is-done");
+        el.classList.toggle("is-active", s === 1);
+      });
+    }
+    if ($("dropzone")) $("dropzone").classList.add("is-loading");
+    if (loaderAnim.rafId) cancelAnimationFrame(loaderAnim.rafId);
+    _paintLoaderUi();
+    loaderAnim.rafId = requestAnimationFrame(_tickLoader);
+  }
+
+  function setStudioLoaderProgress(stage, targetPct, creepCeil, stepIndex, metaText = null) {
+    if (!loaderAnim.active) return;
+    if (stage && $("loaderStage")) $("loaderStage").textContent = stage;
+    if (typeof targetPct === "number") loaderAnim.targetPct = Math.max(loaderAnim.targetPct, targetPct);
+    if (typeof creepCeil === "number") loaderAnim.creepCeil = Math.max(loaderAnim.targetPct, creepCeil);
+    if (metaText !== null) loaderAnim.metaText = metaText;
+    if (stepIndex) {
       document.querySelectorAll("#studioLoader .loader-step").forEach((el) => {
         const s = Number(el.dataset.step || 0);
         el.classList.toggle("is-done", s < stepIndex);
         el.classList.toggle("is-active", s === stepIndex);
       });
     }
-    const dz = $("dropzone");
-    if (dz) dz.classList.add("is-loading");
   }
 
-  function hideStudioLoader() {
-    if ($("studioLoader")) $("studioLoader").classList.add("hidden");
+  async function finishStudioLoader() {
+    if (!loaderAnim.active) return;
+    loaderAnim.creepCeil = 100;
+    loaderAnim.targetPct = 100;
+    setStudioLoaderProgress("Complete — workspace ready", 100, 100, 5);
+    await new Promise((r) => setTimeout(r, 240));
+    loaderAnim.currentPct = 100;
+    _paintLoaderUi();
+    const loader = $("studioLoader");
+    if (loader) loader.classList.add("is-fading");
+    await new Promise((r) => setTimeout(r, 260));
+    abortStudioLoader();
+  }
+
+  function abortStudioLoader() {
+    loaderAnim.active = false;
+    if (loaderAnim.rafId) {
+      cancelAnimationFrame(loaderAnim.rafId);
+      loaderAnim.rafId = null;
+    }
+    if ($("studioLoader")) {
+      $("studioLoader").classList.add("hidden");
+      $("studioLoader").classList.remove("is-fading");
+    }
     if ($("dropzone")) $("dropzone").classList.remove("is-loading");
+  }
+
+  function readFileWithProgress(file, onProgress) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onprogress = (ev) => {
+        if (ev.lengthComputable && onProgress) onProgress(ev.loaded, ev.total);
+      };
+      reader.onerror = () => reject(reader.error || new Error("Failed reading local file"));
+      reader.onload = () => {
+        if (onProgress) onProgress(file.size, file.size);
+        resolve(reader.result);
+      };
+      reader.readAsArrayBuffer(file);
+    });
   }
 
   async function pickDecodeImage(tiff, fullWidth, targetWidth) {
@@ -482,13 +575,34 @@
     }
   }
 
-  async function loadGeoTIFF(source, fileName, fileSizeBytes) {
+  async function loadGeoTIFF(source, fileName, fileSizeBytes, loaderStarted = false) {
+    let ok = false;
     try {
       $("statusText").textContent = `Processing ${fileName}...`;
-      showStudioLoader(`Processing ${fileName}`, "Reading GeoTIFF binary stream...", 20, 1);
+      if (!loaderStarted) {
+        startStudioLoader(`Processing ${fileName}`, "Reading GeoTIFF binary stream...");
+      }
+
+      let bufferOrSource = source;
+      if (source instanceof Blob) {
+        bufferOrSource = await readFileWithProgress(source, (loaded, total) => {
+          const frac = total > 0 ? loaded / total : 0.5;
+          setStudioLoaderProgress(
+            "Streaming local GeoTIFF into browser memory...",
+            6 + frac * 38,
+            44,
+            1,
+            `${formatBytes(loaded)} / ${formatBytes(total)}`
+          );
+        });
+      }
+
+      setStudioLoaderProgress("Parsing GeoTIFF header & IFD directory...", 48, 56, 2, formatBytes(fileSizeBytes));
       await yieldFrame();
 
-      const tiff = source instanceof Blob ? await GeoTIFF.fromBlob(source) : await GeoTIFF.fromArrayBuffer(source);
+      const tiff = bufferOrSource instanceof ArrayBuffer
+        ? await GeoTIFF.fromArrayBuffer(bufferOrSource)
+        : await GeoTIFF.fromBlob(bufferOrSource);
       const image = await tiff.getImage(0);
       const width = image.getWidth();
       const height = image.getHeight();
@@ -501,11 +615,12 @@
       const readW = Math.min(width, maxPreviewW);
       const readH = Math.max(1, Math.round(height * (readW / width)));
 
-      showStudioLoader(
-        `Processing ${fileName}`,
-        `Inspecting CRS (${sp.crsLabel}) & selecting optimal pyramid level...`,
-        46,
-        2
+      setStudioLoaderProgress(
+        `Inspecting CRS (${sp.crsLabel}) & selecting COG pyramid overview...`,
+        58,
+        66,
+        2,
+        `${width.toLocaleString()} × ${height.toLocaleString()} px`
       );
       await yieldFrame();
 
@@ -513,11 +628,12 @@
       const sf = image.getSampleFormat ? image.getSampleFormat() : [1];
       const isFloat = sf && (sf[0] === 3);
 
-      showStudioLoader(
-        `Processing ${fileName}`,
+      setStudioLoaderProgress(
         `Decoding ${bandsCount} band(s) at ${readW} × ${readH} preview resolution...`,
-        74,
-        3
+        68,
+        88,
+        3,
+        `${bandsCount} band(s) · ${formatBytes(fileSizeBytes)}`
       );
       await yieldFrame();
 
@@ -583,7 +699,7 @@
         }
       }
 
-      showStudioLoader(`Processing ${fileName}`, "Rendering cartographic canvas & area analytics...", 95, 4);
+      setStudioLoaderProgress("Rendering cartographic canvas & area analytics...", 92, 98, 4);
       await yieldFrame();
 
       // Configure smart mode defaults
@@ -630,11 +746,12 @@
       $("downloadJsonBtn").disabled = false;
       $("downloadQmlBtn").disabled = false;
       $("downloadSldBtn").disabled = false;
+      ok = true;
+      await finishStudioLoader();
     } catch (err) {
       $("statusText").textContent = `Could not decode ${fileName}: ${err.message}`;
-      throw err;
-    } finally {
-      hideStudioLoader();
+      abortStudioLoader();
+      if (!ok) return;
     }
   }
 
@@ -1460,36 +1577,91 @@
     }
   }
 
-  function syncWebMap() {
-    if ($("webMapView").classList.contains("hidden")) return;
-    if (!state.boundsWgs84 || !state.overlayDataUrl) {
-      $("mapCoords").textContent = "Raster is not georeferenced with known CRS/EPSG";
+  function syncMapLegend() {
+    const leg = $("mapLegend");
+    if (!leg) return;
+    if (!state.rasters || !state.boundsWgs84) {
+      leg.classList.add("hidden");
       return;
     }
+    const mode = $("modeSelect").value;
+    if (mode === "categorical" && state.classes.length) {
+      const items = state.classes.filter((c) => c.visible !== false).slice(0, 10);
+      leg.innerHTML =
+        `<strong>${escapeXml($("titleInput").value || "Legend")}</strong>` +
+        items
+          .map(
+            (c) =>
+              `<div class="map-legend-item"><span class="map-legend-swatch" style="background:${rgbToHex(c.rgb)}"></span><span>${escapeXml(c.name)}</span></div>`
+          )
+          .join("");
+      leg.classList.remove("hidden");
+    } else if (mode === "index" && state.indexStats) {
+      leg.innerHTML = `<strong>${state.indexStats.index}</strong><div>${state.indexStats.min} to ${state.indexStats.max} (mean ${state.indexStats.mean})</div>`;
+      leg.classList.remove("hidden");
+    } else if (mode === "singleband" && state.sbStats) {
+      leg.innerHTML = `<strong>Band ${state.sbStats.band}</strong><div>${state.sbStats.lo} to ${state.sbStats.hi} (${state.sbStats.cmap})</div>`;
+      leg.classList.remove("hidden");
+    } else {
+      leg.classList.add("hidden");
+    }
+  }
+
+  function applyRasterLayerToMap() {
+    if (!state.map || !state.boundsWgs84 || !state.overlayDataUrl) return;
     const [w, s, e, n] = state.boundsWgs84;
     const coords = [[w, n], [e, n], [e, s], [w, s]];
-    const bkey = $("basemapSelect").value;
-    const bm = BASEMAP_TILES[bkey] || BASEMAP_TILES.positron;
     const resamp = $("resampleSelect") ? $("resampleSelect").value : "nearest";
+    const vis = !$("layerVisCheck") || $("layerVisCheck").checked ? "visible" : "none";
+    const opacity = Number($("opacitySlider").value) / 100;
+
+    const existing = state.map.getSource("lulc");
+    if (existing) {
+      existing.updateImage({ url: state.overlayDataUrl, coordinates: coords });
+    } else {
+      state.map.addSource("lulc", { type: "image", url: state.overlayDataUrl, coordinates: coords });
+      const beforeId = state.map.getLayer("measure-fill") ? "measure-fill" : undefined;
+      state.map.addLayer(
+        {
+          id: "lulc-layer",
+          type: "raster",
+          source: "lulc",
+          layout: { visibility: vis },
+          paint: { "raster-opacity": opacity, "raster-resampling": resamp },
+        },
+        beforeId
+      );
+    }
+    if (state.map.getLayer("lulc-layer")) {
+      state.map.setLayoutProperty("lulc-layer", "visibility", vis);
+      state.map.setPaintProperty("lulc-layer", "raster-opacity", opacity);
+      state.map.setPaintProperty("lulc-layer", "raster-resampling", resamp);
+    }
+  }
+
+  function syncWebMap() {
+    if ($("webMapView").classList.contains("hidden")) return;
+    const hasRaster = Boolean(state.boundsWgs84 && state.overlayDataUrl);
+    const bkey = $("basemapSelect").value;
+    const bm = BASEMAP_TILES[bkey] || BASEMAP_TILES.voyager;
+    const projType = $("projSelect") ? $("projSelect").value : "globe";
 
     if (!state.map) {
+      const center = hasRaster
+        ? [(state.boundsWgs84[0] + state.boundsWgs84[2]) / 2, (state.boundsWgs84[1] + state.boundsWgs84[3]) / 2]
+        : [90.34, 23.68];
+      const zoom = hasRaster ? 6 : 2.3;
+
       state.map = new maplibregl.Map({
         container: "webMap",
         style: {
           version: 8,
           sources: {
             basemap: { type: "raster", tiles: bm.tiles, tileSize: 256, attribution: bm.attribution },
-            lulc: { type: "image", url: state.overlayDataUrl, coordinates: coords },
             "measure-src": { type: "geojson", data: { type: "FeatureCollection", features: [] } },
           },
           layers: [
             { id: "basemap-layer", type: "raster", source: "basemap" },
-            {
-              id: "lulc-layer",
-              type: "raster",
-              source: "lulc",
-              paint: { "raster-opacity": Number($("opacitySlider").value) / 100, "raster-resampling": resamp },
-            },
             {
               id: "measure-fill",
               type: "fill",
@@ -1512,15 +1684,43 @@
             },
           ],
         },
-        center: [(w + e) / 2, (s + n) / 2],
-        zoom: 9,
+        center,
+        zoom,
       });
-      state.map.addControl(new maplibregl.NavigationControl(), "top-right");
+
+      state.map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+      if (typeof maplibregl.GlobeControl === "function") {
+        state.map.addControl(new maplibregl.GlobeControl(), "top-right");
+      }
+      if (typeof maplibregl.FullscreenControl === "function") {
+        state.map.addControl(new maplibregl.FullscreenControl(), "top-right");
+      }
+      if (typeof maplibregl.GeolocateControl === "function") {
+        state.map.addControl(new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true } }), "top-right");
+      }
       state.map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
-      state.map.on("load", () => state.map.fitBounds([[w, s], [e, n]], { padding: 30, duration: 0 }));
-      state.map.on("mousemove", (ev) => {
-        $("mapCoords").textContent = `Lon: ${ev.lngLat.lng.toFixed(5)}°, Lat: ${ev.lngLat.lat.toFixed(5)}°`;
+
+      state.map.on("style.load", () => {
+        if (typeof state.map.setProjection === "function") {
+          state.map.setProjection({ type: projType });
+        }
+        if (hasRaster) applyRasterLayerToMap();
       });
+
+      state.map.on("load", () => {
+        if (hasRaster) {
+          applyRasterLayerToMap();
+          const [w, s, e, n] = state.boundsWgs84;
+          state.map.fitBounds([[w, s], [e, n]], { padding: 30, duration: 500 });
+        }
+      });
+
+      state.map.on("mousemove", (ev) => {
+        const z = state.map.getZoom().toFixed(2);
+        const modeLbl = $("projSelect")?.value === "mercator" ? "2D" : "3D Globe";
+        $("mapCoords").textContent = `Lon: ${ev.lngLat.lng.toFixed(5)}°, Lat: ${ev.lngLat.lat.toFixed(5)}° · Z${z} · ${modeLbl}`;
+      });
+
       state.map.on("click", (ev) => {
         const pt = [ev.lngLat.lng, ev.lngLat.lat];
         if (state.gisTool === "distance" || state.gisTool === "area") {
@@ -1531,14 +1731,19 @@
           const col = Math.floor(((pt[0] - bw) / (be - bw)) * state.readW);
           const row = Math.floor(((bn - pt[1]) / (bn - bs)) * state.readH);
           identifyAtColRow(col, row, pt);
+        } else {
+          $("identifyBar").textContent = `World Coordinates: ${pt[0].toFixed(5)}°, ${pt[1].toFixed(5)}° (load a GeoTIFF to identify pixels)`;
         }
       });
     } else {
-      const src = state.map.getSource("lulc");
-      if (src) src.updateImage({ url: state.overlayDataUrl, coordinates: coords });
       state.map.resize();
-      state.map.fitBounds([[w, s], [e, n]], { padding: 30, duration: 300 });
+      if (hasRaster) {
+        applyRasterLayerToMap();
+        const [w, s, e, n] = state.boundsWgs84;
+        state.map.fitBounds([[w, s], [e, n]], { padding: 30, duration: 450 });
+      }
     }
+    syncMapLegend();
   }
 
   function renderAll() {
@@ -1579,7 +1784,7 @@
       btn.textContent = busyLabel;
     }
     try {
-      showStudioLoader(`Loading ${fileName}`, "Fetching sample GeoTIFF...", 8, 1);
+      startStudioLoader(`Loading ${fileName}`, `Connecting to ${fileName}...`);
       await yieldFrame();
       let resp = null;
       for (const u of urls) {
@@ -1590,11 +1795,41 @@
         }
       }
       if (!resp) throw new Error("Sample GeoTIFF unavailable");
-      const buf = await resp.arrayBuffer();
-      await loadGeoTIFF(buf, fileName, buf.byteLength);
+
+      let buf;
+      const totalBytes = Number(resp.headers.get("Content-Length") || 0);
+      if (resp.body && typeof resp.body.getReader === "function") {
+        const reader = resp.body.getReader();
+        const chunks = [];
+        let received = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          received += value.byteLength;
+          const frac = totalBytes > 0 ? Math.min(1, received / totalBytes) : Math.min(0.9, received / 3_200_000);
+          setStudioLoaderProgress(
+            `Downloading sample COG (${formatBytes(received)})...`,
+            6 + frac * 38,
+            44,
+            1,
+            totalBytes > 0 ? `${formatBytes(received)} / ${formatBytes(totalBytes)}` : formatBytes(received)
+          );
+        }
+        const merged = new Uint8Array(received);
+        let offset = 0;
+        for (const c of chunks) {
+          merged.set(c, offset);
+          offset += c.byteLength;
+        }
+        buf = merged.buffer;
+      } else {
+        buf = await resp.arrayBuffer();
+      }
+      await loadGeoTIFF(buf, fileName, buf.byteLength, true);
     } catch (err) {
       $("statusText").textContent = `Could not fetch sample GeoTIFF: ${err.message}`;
-      hideStudioLoader();
+      abortStudioLoader();
     } finally {
       if (btn) {
         btn.disabled = false;
@@ -1727,20 +1962,67 @@
     syncWebMap();
   });
 
+  $("projSelect")?.addEventListener("change", () => {
+    if (state.map && typeof state.map.setProjection === "function") {
+      state.map.setProjection({ type: $("projSelect").value });
+    }
+  });
   $("basemapSelect").addEventListener("change", () => {
     if (!state.map) return;
-    const bm = BASEMAP_TILES[$("basemapSelect").value] || BASEMAP_TILES.positron;
+    const bm = BASEMAP_TILES[$("basemapSelect").value] || BASEMAP_TILES.voyager;
     state.map.getSource("basemap").setTiles(bm.tiles);
+  });
+  $("layerVisCheck")?.addEventListener("change", () => {
+    if (state.map && state.map.getLayer("lulc-layer")) {
+      state.map.setLayoutProperty("lulc-layer", "visibility", $("layerVisCheck").checked ? "visible" : "none");
+    }
   });
   $("resampleSelect").addEventListener("change", () => {
     if (state.map && state.map.getLayer("lulc-layer")) {
       state.map.setPaintProperty("lulc-layer", "raster-resampling", $("resampleSelect").value);
     }
   });
+  $("zoomWorldBtn")?.addEventListener("click", () => {
+    if (state.map) {
+      state.map.flyTo({ center: [20, 20], zoom: 1.6, pitch: 0, bearing: 0, duration: 900 });
+    }
+  });
   $("zoomLayerBtn").addEventListener("click", () => {
     if (state.map && state.boundsWgs84) {
       const [w, s, e, n] = state.boundsWgs84;
-      state.map.fitBounds([[w, s], [e, n]], { padding: 30, duration: 350 });
+      state.map.fitBounds([[w, s], [e, n]], { padding: 30, duration: 500 });
+    }
+  });
+  $("mapSearchForm")?.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const q = ($("mapSearchInput")?.value || "").trim();
+    if (!q || !state.map) return;
+    const coordMatch = q.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+    if (coordMatch) {
+      const a = Number(coordMatch[1]);
+      const b = Number(coordMatch[2]);
+      const [lat, lon] = Math.abs(a) > 90 && Math.abs(b) <= 90 ? [b, a] : [a, b];
+      if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+        state.map.flyTo({ center: [lon, lat], zoom: 9, duration: 900 });
+        $("identifyBar").textContent = `Flew to ${lon.toFixed(4)}°, ${lat.toFixed(4)}°`;
+        return;
+      }
+    }
+    try {
+      $("identifyBar").textContent = `Searching "${q}"...`;
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`);
+      const rows = await res.json();
+      if (!rows.length) {
+        $("identifyBar").textContent = `No place found for "${q}"`;
+        return;
+      }
+      const hit = rows[0];
+      const lon = Number(hit.lon);
+      const lat = Number(hit.lat);
+      state.map.flyTo({ center: [lon, lat], zoom: 8, duration: 1000 });
+      $("identifyBar").textContent = `Found: ${hit.display_name.split(",").slice(0, 2).join(",")} (${lon.toFixed(3)}°, ${lat.toFixed(3)}°)`;
+    } catch (err) {
+      $("identifyBar").textContent = `Search failed: ${err.message}`;
     }
   });
   $("opacitySlider").addEventListener("input", () => {
