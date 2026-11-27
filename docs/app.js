@@ -170,28 +170,28 @@
   };
 
   const BASEMAP_TILES = {
-    voyager: {
-      tiles: ["https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"],
-      attribution: "&copy; OpenStreetMap &copy; CARTO",
-    },
-    positron: {
-      tiles: ["https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"],
-      attribution: "&copy; OpenStreetMap &copy; CARTO",
-    },
-    dark: {
-      tiles: ["https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"],
-      attribution: "&copy; OpenStreetMap &copy; CARTO",
-    },
-    osm: {
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-      attribution: "&copy; OpenStreetMap contributors",
+    esri_street: {
+      tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"],
+      attribution: "Tiles &copy; Esri",
     },
     esri: {
       tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
       attribution: "Tiles &copy; Esri",
     },
+    osm: {
+      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      attribution: "&copy; OpenStreetMap contributors",
+    },
     esri_topo: {
       tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"],
+      attribution: "Tiles &copy; Esri",
+    },
+    esri_light: {
+      tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"],
+      attribution: "Tiles &copy; Esri",
+    },
+    esri_dark: {
+      tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"],
       attribution: "Tiles &copy; Esri",
     },
     opentopo: {
@@ -1643,7 +1643,7 @@
     if ($("webMapView").classList.contains("hidden")) return;
     const hasRaster = Boolean(state.boundsWgs84 && state.overlayDataUrl);
     const bkey = $("basemapSelect").value;
-    const bm = BASEMAP_TILES[bkey] || BASEMAP_TILES.voyager;
+    const bm = BASEMAP_TILES[bkey] || BASEMAP_TILES.esri_street;
     const projType = $("projSelect") ? $("projSelect").value : "globe";
 
     if (!state.map) {
@@ -1969,7 +1969,7 @@
   });
   $("basemapSelect").addEventListener("change", () => {
     if (!state.map) return;
-    const bm = BASEMAP_TILES[$("basemapSelect").value] || BASEMAP_TILES.voyager;
+    const bm = BASEMAP_TILES[$("basemapSelect").value] || BASEMAP_TILES.esri_street;
     state.map.getSource("basemap").setTiles(bm.tiles);
   });
   $("layerVisCheck")?.addEventListener("change", () => {

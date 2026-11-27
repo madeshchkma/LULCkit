@@ -1067,9 +1067,10 @@ def export_interactive_html(
     <div class="ctrl">
       <label for="basemap">Basemap</label>
       <select id="basemap">
-        <option value="positron" selected>Carto Positron Light</option>
-        <option value="osm">OpenStreetMap</option>
+        <option value="esri_street" selected>Esri World Street Map</option>
         <option value="esri">Esri World Imagery (Satellite)</option>
+        <option value="osm">OpenStreetMap</option>
+        <option value="esri_light">Esri Light Gray Canvas</option>
         <option value="white">Clean White Canvas</option>
       </select>
     </div>
@@ -1092,9 +1093,10 @@ def export_interactive_html(
     const BOUNDARY_DATA = {boundary_json_str};
 
     const BASEMAP_SOURCES = {{
-      positron: ['https://basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}.png'],
+      esri_street: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{{z}}/{{y}}/{{x}}'],
+      esri_light: ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{{z}}/{{y}}/{{x}}'],
       osm: ['https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png'],
-      esri: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{{z}}/{{x}}/{{y}}'],
+      esri: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{{z}}/{{y}}/{{x}}'],
       white: []
     }};
 
@@ -1103,14 +1105,16 @@ def export_interactive_html(
       style: {{
         version: 8,
         sources: {{
-          positron: {{ type: 'raster', tiles: BASEMAP_SOURCES.positron, tileSize: 256, attribution: '© Carto © OSM' }},
+          esri_street: {{ type: 'raster', tiles: BASEMAP_SOURCES.esri_street, tileSize: 256, attribution: '© Esri' }},
+          esri_light: {{ type: 'raster', tiles: BASEMAP_SOURCES.esri_light, tileSize: 256, attribution: '© Esri' }},
           osm: {{ type: 'raster', tiles: BASEMAP_SOURCES.osm, tileSize: 256, attribution: '© OpenStreetMap' }},
           esri: {{ type: 'raster', tiles: BASEMAP_SOURCES.esri, tileSize: 256, attribution: '© Esri' }},
           lulc: {{ type: 'image', url: DATA_URI, coordinates: IMG_COORDS }}
         }},
         layers: [
           {{ id: 'bg', type: 'background', paint: {{ 'background-color': '#ffffff' }} }},
-          {{ id: 'bm-positron', type: 'raster', source: 'positron', layout: {{ visibility: 'visible' }} }},
+          {{ id: 'bm-esri_street', type: 'raster', source: 'esri_street', layout: {{ visibility: 'visible' }} }},
+          {{ id: 'bm-esri_light', type: 'raster', source: 'esri_light', layout: {{ visibility: 'none' }} }},
           {{ id: 'bm-osm', type: 'raster', source: 'osm', layout: {{ visibility: 'none' }} }},
           {{ id: 'bm-esri', type: 'raster', source: 'esri', layout: {{ visibility: 'none' }} }},
           {{ id: 'lulc-layer', type: 'raster', source: 'lulc', paint: {{ 'raster-opacity': 0.9, 'raster-resampling': 'nearest' }} }}
@@ -1137,7 +1141,7 @@ def export_interactive_html(
 
     document.getElementById('basemap').addEventListener('change', (e) => {{
       const val = e.target.value;
-      ['positron', 'osm', 'esri'].forEach((k) => {{
+      ['esri_street', 'esri_light', 'osm', 'esri'].forEach((k) => {{
         map.setLayoutProperty('bm-' + k, 'visibility', k === val ? 'visible' : 'none');
       }});
     }});
