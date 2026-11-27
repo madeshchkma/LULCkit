@@ -86,6 +86,108 @@ PALETTES: dict[str, tuple[tuple[int, int, int], ...]] = {
         (86, 180, 233),
         (240, 228, 66),
     ),
+    "esa-worldcover": (
+        (0, 100, 0),
+        (255, 187, 34),
+        (255, 255, 76),
+        (240, 150, 255),
+        (250, 0, 0),
+        (180, 180, 180),
+        (240, 240, 240),
+        (0, 100, 200),
+        (0, 150, 160),
+        (0, 207, 117),
+    ),
+    "esri-lulc": (
+        (26, 91, 171),
+        (53, 130, 33),
+        (135, 209, 158),
+        (255, 219, 92),
+        (237, 2, 42),
+        (237, 233, 228),
+        (242, 250, 255),
+        (200, 200, 200),
+        (198, 173, 141),
+    ),
+    "dynamic-world": (
+        (65, 155, 223),
+        (57, 125, 73),
+        (136, 176, 83),
+        (122, 135, 198),
+        (228, 150, 53),
+        (223, 195, 90),
+        (196, 40, 27),
+        (165, 155, 143),
+        (179, 159, 225),
+    ),
+    "nlcd": (
+        (70, 107, 159),
+        (217, 146, 130),
+        (104, 171, 95),
+        (28, 95, 44),
+        (204, 184, 121),
+        (220, 217, 57),
+        (171, 108, 40),
+        (184, 217, 235),
+    ),
+    "corine": (
+        (230, 0, 77),
+        (255, 255, 168),
+        (77, 230, 0),
+        (204, 242, 77),
+        (204, 204, 204),
+        (166, 166, 255),
+        (0, 204, 242),
+    ),
+    "qgis-spectral": (
+        (215, 25, 28),
+        (240, 124, 74),
+        (254, 201, 128),
+        (255, 255, 191),
+        (199, 233, 173),
+        (128, 191, 171),
+        (43, 131, 186),
+        (94, 79, 162),
+    ),
+    "arcgis-topo": (
+        (45, 106, 79),
+        (82, 183, 136),
+        (149, 213, 178),
+        (233, 196, 106),
+        (244, 162, 97),
+        (193, 124, 71),
+        (141, 110, 99),
+        (74, 144, 226),
+    ),
+    "urban-heat": (
+        (43, 131, 186),
+        (171, 221, 164),
+        (255, 255, 191),
+        (253, 174, 97),
+        (244, 109, 67),
+        (215, 25, 28),
+        (128, 0, 38),
+    ),
+    "hydrology": (
+        (8, 48, 107),
+        (8, 81, 156),
+        (33, 113, 181),
+        (66, 146, 198),
+        (107, 174, 214),
+        (158, 202, 225),
+        (56, 168, 0),
+        (217, 179, 130),
+    ),
+    "ag-phenology": (
+        (243, 244, 246),
+        (167, 243, 208),
+        (52, 211, 153),
+        (16, 185, 129),
+        (4, 120, 87),
+        (245, 158, 11),
+        (220, 38, 38),
+        (124, 45, 18),
+    ),
 }
 
 COMPOSITES: dict[str, tuple[tuple[str, str, str], str]] = {
@@ -1064,3 +1166,68 @@ def export_interactive_html(
 """
     out.write_text(html_doc, encoding="utf-8")
     return out
+
+
+def write_qgis_qml_style(classes: list[Any], output_path: Path) -> Path:
+    """Write a QGIS 3.x paletted rasterrenderer QML style file for categorical GeoTIFFs."""
+    entries = []
+    for cls in classes:
+        r, g, b = (int(v) for v in cls.color)
+        hex_c = f"#{r:02x}{g:02x}{b:02x}"
+        label = html.escape(str(cls.name), quote=True)
+        entries.append(
+            f'        <paletteEntry value="{int(cls.id)}" color="{hex_c}" alpha="255" label="{label}"/>'
+        )
+    xml_doc = "\n".join([
+        '<!DOCTYPE qgis PUBLIC "http://mrcc.com/qgis.dtd" "SYSTEM">',
+        '<qgis version="3.34.0" styleCategories="Symbology">',
+        '  <pipe>',
+        '    <rasterrenderer type="paletted" band="1" opacity="1" alphaBand="-1">',
+        '      <colorPalette>',
+        *entries,
+        '      </colorPalette>',
+        '    </rasterrenderer>',
+        '  </pipe>',
+        '</qgis>',
+        "",
+    ])
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(xml_doc, encoding="utf-8")
+    return output_path
+
+
+def write_sld_style(classes: list[Any], output_path: Path, layer_name: str = "LULC") -> Path:
+    """Write an OGC SLD 1.0 RasterSymbolizer ColorMap style file."""
+    entries = []
+    for cls in classes:
+        r, g, b = (int(v) for v in cls.color)
+        hex_c = f"#{r:02X}{g:02X}{b:02X}"
+        label = html.escape(str(cls.name), quote=True)
+        entries.append(
+            f'            <ColorMapEntry color="{hex_c}" quantity="{int(cls.id)}" label="{label}" opacity="1.0"/>'
+        )
+    safe_name = html.escape(layer_name or "LULC", quote=True)
+    xml_doc = "\n".join([
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<StyledLayerDescriptor version="1.0.0" xmlns="http://www.opengis.net/sld">',
+        '  <NamedLayer>',
+        f'    <Name>{safe_name}</Name>',
+        '    <UserStyle>',
+        f'      <Title>{safe_name}</Title>',
+        '      <FeatureTypeStyle>',
+        '        <Rule>',
+        '          <RasterSymbolizer>',
+        '            <ColorMap type="values">',
+        *entries,
+        '            </ColorMap>',
+        '          </RasterSymbolizer>',
+        '        </Rule>',
+        '      </FeatureTypeStyle>',
+        '    </UserStyle>',
+        '  </NamedLayer>',
+        '</StyledLayerDescriptor>',
+        "",
+    ])
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(xml_doc, encoding="utf-8")
+    return output_path

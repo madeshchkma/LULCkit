@@ -340,7 +340,28 @@ def build_app() -> Any:
                             map_tta = gr.Checkbox(value=False, label="4-Way TTA (sharper edges)")
                             map_sieve = gr.Number(value=0, precision=0, label="Speckle Sieve (min px, 0=off)")
                     map_title = gr.Textbox(label="Map Title (optional)", placeholder="Boro Area Mapping for Bogura - 2026")
-                    map_palette = gr.Dropdown(["arcgis-crop", "default", "vivid", "earth", "pastel", "colorblind"], value="arcgis-crop", label="Palette")
+                    map_palette = gr.Dropdown(
+                        [
+                            "arcgis-crop",
+                            "default",
+                            "esa-worldcover",
+                            "esri-lulc",
+                            "dynamic-world",
+                            "nlcd",
+                            "corine",
+                            "qgis-spectral",
+                            "arcgis-topo",
+                            "urban-heat",
+                            "hydrology",
+                            "ag-phenology",
+                            "vivid",
+                            "earth",
+                            "pastel",
+                            "colorblind",
+                        ],
+                        value="arcgis-crop",
+                        label="Palette",
+                    )
                     map_labels = gr.Textbox(label="Class Labels (id:Name,...)", placeholder="0:Non Boro,1:Early Boro,2:Late Boro")
                     map_colors = gr.Textbox(label="Class Colors (id:#RRGGBB,...)", placeholder="0:#FFFFFF,1:#38A800,2:#E60000")
                     map_nodata = gr.Textbox(label="Extra Nodata Integer (optional)")
@@ -399,7 +420,26 @@ def build_app() -> Any:
                     b_comp = gr.Dropdown(["true-color", "false-color-nir", "agriculture", "swir"], value="false-color-nir", label="Optical Composite")
                     b_rgb = gr.Textbox(value="1,2,3", label="Bands (3 for RGB, or comma-separated for Multi-Band Subset)")
                     b_single = gr.Number(value=1, precision=0, label="Single Band Index (1-based)")
-                    b_cmap = gr.Dropdown(["auto", "viridis", "RdYlGn", "Blues", "RdBu", "gray"], value="auto", label="Colormap")
+                    b_cmap = gr.Dropdown(
+                        [
+                            "auto",
+                            "RdYlGn",
+                            "Blues",
+                            "RdBu",
+                            "viridis",
+                            "plasma",
+                            "inferno",
+                            "magma",
+                            "turbo",
+                            "terrain",
+                            "Spectral",
+                            "BrBG",
+                            "YlOrRd",
+                            "gray",
+                        ],
+                        value="auto",
+                        label="Colormap",
+                    )
                     b_title = gr.Textbox(label="Map Title (optional)")
                     b_page = gr.Dropdown(["a4", "a5", "a3", "letter", "square"], value="a4", label="Page Size")
                     b_btn = gr.Button("Process Bands", variant="primary")

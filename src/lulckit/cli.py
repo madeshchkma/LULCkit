@@ -36,6 +36,8 @@ from lulckit.cartography import (
     list_palettes,
     list_scalebar_styles,
     resolve_composite_bands,
+    write_qgis_qml_style,
+    write_sld_style,
 )
 from lulckit.geo import compute_spectral_indices
 from lulckit.inspect import TiffProfile, inspect_tiff
@@ -186,6 +188,8 @@ def _execute_map(
     min_area_pixels: int = 4,
     tta: bool = False,
     sieve_size: int = 0,
+    export_qml: bool = False,
+    export_sld: bool = False,
     preview: bool = True,
     print_summary: bool = True,
 ) -> dict[str, Any]:
@@ -221,6 +225,8 @@ def _execute_map(
     geojson_path = (output_dir / f"{stem}_lulc.geojson") if vector else None
     preview_path = (output_dir / f"{stem}_preview.{map_format}") if preview else None
     html_path = (output_dir / f"{stem}_map.html") if html else None
+    qml_path = write_qgis_qml_style(lulc_model.classes, output_dir / f"{stem}_lulc.qml") if export_qml else None
+    sld_path = write_sld_style(lulc_model.classes, output_dir / f"{stem}_lulc.sld", layer_name=stem) if export_sld else None
 
     with Progress(
         TextColumn("[bold blue]{task.description}"),
@@ -277,6 +283,8 @@ def _execute_map(
         "report_json": json_path,
         "summary_csv": csv_path,
         "vector_geojson": geojson_path,
+        "qgis_qml": qml_path,
+        "sld_style": sld_path,
         preview_key: preview_path,
     }
     params = {
@@ -694,6 +702,8 @@ def map_cmd(
     vector: bool = typer.Option(False, "--vector", help="Export polygonized LULC GeoJSON.", rich_help_panel="Outputs & Export"),
     min_area_pixels: int = typer.Option(4, "--min-area-pixels", help="Minimum polygon size in pixels for --vector.", rich_help_panel="Outputs & Export"),
     save_confidence: bool = typer.Option(False, "--save-confidence", help="Write uint8 0-100% confidence GeoTIFF.", rich_help_panel="Outputs & Export"),
+    qml: bool = typer.Option(False, "--qml", help="Export QGIS layer style (.qml).", rich_help_panel="Outputs & Export"),
+    sld: bool = typer.Option(False, "--sld", help="Export OGC Styled Layer Descriptor (.sld).", rich_help_panel="Outputs & Export"),
     model: str = typer.Option("auto", "--model", "-m", help="Model: auto, rgb-oem, rgb-fast, s2-dw, or categorical.", rich_help_panel="Model & Inference"),
     hf_model: Optional[str] = typer.Option(None, "--hf-model", help="Custom Hugging Face semantic segmentation repo ID.", rich_help_panel="Model & Inference"),
     device: str = typer.Option("auto", "--device", help="Device: auto, cpu, cuda, or mps.", rich_help_panel="Model & Inference"),
@@ -705,7 +715,7 @@ def map_cmd(
     rgb_bands: Optional[str] = typer.Option(None, "--rgb-bands", help="1-based R,G,B bands (e.g. 1,2,3 or 4,3,2).", rich_help_panel="Bands & Styling"),
     s2_bands: Optional[str] = typer.Option(None, "--s2-bands", help="1-based 9 Sentinel-2 bands (B2,B3,B4,B5,B6,B7,B8,B11,B12).", rich_help_panel="Bands & Styling"),
     composite: Optional[str] = typer.Option(None, "--composite", help="Multiband display preset: true-color, false-color-nir, agriculture, or swir.", rich_help_panel="Bands & Styling"),
-    palette: str = typer.Option("default", "--palette", help="Color palette (default, arcgis-crop, vivid, earth, pastel, colorblind, or Matplotlib colormap).", rich_help_panel="Bands & Styling"),
+    palette: str = typer.Option("default", "--palette", help="Color palette (16 GIS palettes e.g. default, arcgis-crop, esa-worldcover, esri-lulc, dynamic-world, nlcd, corine, or Matplotlib cmap).", rich_help_panel="Bands & Styling"),
     class_labels: Optional[str] = typer.Option(None, "--class-labels", help="Class labels as id:Label (e.g. '0:Non Boro,1:Early,2:Late').", rich_help_panel="Bands & Styling"),
     class_colors: Optional[str] = typer.Option(None, "--class-colors", help="Class colors as id:#RRGGBB (e.g. '0:#FFFFFF,1:#38A800').", rich_help_panel="Bands & Styling"),
     nodata_value: Optional[int] = typer.Option(None, "--nodata-value", help="Integer value in categorical input to mask as nodata.", rich_help_panel="Bands & Styling"),
@@ -768,6 +778,8 @@ def map_cmd(
             min_area_pixels=min_area_pixels,
             tta=tta,
             sieve_size=sieve_size,
+            export_qml=qml,
+            export_sld=sld,
             preview=preview,
             print_summary=True,
         )

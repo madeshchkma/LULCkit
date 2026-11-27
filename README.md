@@ -83,8 +83,8 @@ See [qgis_plugin/README.md](qgis_plugin/README.md) for Processing Toolbox usage 
 Build the `.rgplugin` package or install it from **Plugins › Plugin Manager › Browse** (`lulckit`) or the GitHub Release:
 
 ```bash
-python scripts/build_rustgis_plugin.py --tag v0.3.0  # writes out/lulckit-0.3.0.rgplugin & out/lulckit.json
-rustgis-cli plugins install out/lulckit-0.3.0.rgplugin
+python scripts/build_rustgis_plugin.py --tag v0.3.1  # writes out/lulckit-0.3.1.rgplugin & out/lulckit.json
+rustgis-cli plugins install out/lulckit-0.3.1.rgplugin
 ```
 
 See [rustgis_plugin/README.md](rustgis_plugin/README.md) for details on tools, multi-band COG export/stacking, ribbon commands, and managed Python environment setup.
@@ -174,8 +174,8 @@ lulc map classified.tif -o ./out/ \
   --page-size a4 --arrow-style compass --scalebar-style arcgis \
   --map-format pdf --html
 
-# High-res RGB GeoTIFF with fast CPU model, TTA, speckle sieve, & polygonized GeoJSON
-lulc map drone_rgb.tif -o ./out/ --model rgb-fast --tta --sieve-size 16 --vector --save-confidence
+# High-res RGB GeoTIFF with fast CPU model, TTA, speckle sieve, QGIS .qml/.sld, & GeoJSON
+lulc map drone_rgb.tif -o ./out/ --model rgb-fast --palette esa-worldcover --tta --sieve-size 16 --qml --sld --vector --save-confidence
 ```
 
 ---

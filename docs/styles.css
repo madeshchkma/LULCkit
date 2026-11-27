@@ -630,11 +630,18 @@ a:hover { text-decoration: underline; }
 
 .class-editor-row {
   display: grid;
-  grid-template-columns: 38px 34px minmax(0, 1fr);
+  grid-template-columns: 20px 36px 32px minmax(0, 1fr);
   gap: 6px;
   align-items: center;
   margin-bottom: 6px;
   font-size: 12.5px;
+}
+.class-editor-row input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--brand);
+  cursor: pointer;
 }
 .class-editor-row code {
   font-family: var(--font-mono);
@@ -727,6 +734,49 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 8px 28px rgba(7, 19, 31, 0.16);
 }
 
+.gis-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+}
+.gis-tool-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.gis-tool-btn.active {
+  background: var(--brand);
+  color: #ffffff;
+  border-color: var(--brand);
+}
+.identify-bar {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+  flex: 1 1 260px;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pal-actions-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.pal-actions-row .btn-sm {
+  flex: 1;
+  padding: 5px 8px;
+  font-size: 12px;
+}
 .webmap-wrap {
   position: relative;
   height: 540px;
@@ -1147,6 +1197,7 @@ pre.code-block {
   .export-buttons { gap: 6px; }
   .export-buttons .btn-sm { flex: 1 1 auto; padding: 7px 8px; font-size: 12px; white-space: nowrap; }
   .canvas-wrap { min-height: 220px; padding: 8px; }
+  .identify-bar { text-align: left; }
   .webmap-wrap { height: 380px; }
   .map-overlay-ctrl {
     top: 8px;

@@ -56,6 +56,108 @@
       [86, 180, 233],
       [240, 228, 66],
     ],
+    "esa-worldcover": [
+      [0, 100, 0],
+      [255, 187, 34],
+      [255, 255, 76],
+      [240, 150, 255],
+      [250, 0, 0],
+      [180, 180, 180],
+      [240, 240, 240],
+      [0, 100, 200],
+      [0, 150, 160],
+      [0, 207, 117],
+    ],
+    "esri-lulc": [
+      [26, 91, 171],
+      [53, 130, 33],
+      [135, 209, 158],
+      [255, 219, 92],
+      [237, 2, 42],
+      [237, 233, 228],
+      [242, 250, 255],
+      [200, 200, 200],
+      [198, 173, 141],
+    ],
+    "dynamic-world": [
+      [65, 155, 223],
+      [57, 125, 73],
+      [136, 176, 83],
+      [122, 135, 198],
+      [228, 150, 53],
+      [223, 195, 90],
+      [196, 40, 27],
+      [165, 155, 143],
+      [179, 159, 225],
+    ],
+    nlcd: [
+      [70, 107, 159],
+      [217, 146, 130],
+      [104, 171, 95],
+      [28, 95, 44],
+      [204, 184, 121],
+      [220, 217, 57],
+      [171, 108, 40],
+      [184, 217, 235],
+    ],
+    corine: [
+      [230, 0, 77],
+      [255, 255, 168],
+      [77, 230, 0],
+      [204, 242, 77],
+      [204, 204, 204],
+      [166, 166, 255],
+      [0, 204, 242],
+    ],
+    "qgis-spectral": [
+      [215, 25, 28],
+      [240, 124, 74],
+      [254, 201, 128],
+      [255, 255, 191],
+      [199, 233, 173],
+      [128, 191, 171],
+      [43, 131, 186],
+      [94, 79, 162],
+    ],
+    "arcgis-topo": [
+      [45, 106, 79],
+      [82, 183, 136],
+      [149, 213, 178],
+      [233, 196, 106],
+      [244, 162, 97],
+      [193, 124, 71],
+      [141, 110, 99],
+      [74, 144, 226],
+    ],
+    "urban-heat": [
+      [43, 131, 186],
+      [171, 221, 164],
+      [255, 255, 191],
+      [253, 174, 97],
+      [244, 109, 67],
+      [215, 25, 28],
+      [128, 0, 38],
+    ],
+    hydrology: [
+      [8, 48, 107],
+      [8, 81, 156],
+      [33, 113, 181],
+      [66, 146, 198],
+      [107, 174, 214],
+      [158, 202, 225],
+      [56, 168, 0],
+      [217, 179, 130],
+    ],
+    "ag-phenology": [
+      [243, 244, 246],
+      [167, 243, 208],
+      [52, 211, 153],
+      [16, 185, 129],
+      [4, 120, 87],
+      [245, 158, 11],
+      [220, 38, 38],
+      [124, 45, 18],
+    ],
   };
 
   const PAGE_SIZES = {
@@ -63,6 +165,7 @@
     a5: [8.27, 5.83],
     a3: [16.54, 11.69],
     letter: [11.0, 8.5],
+    legal: [14.0, 8.5],
     square: [10.0, 10.0],
   };
 
@@ -71,12 +174,20 @@
       tiles: ["https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"],
       attribution: "&copy; OpenStreetMap &copy; CARTO",
     },
+    dark: {
+      tiles: ["https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"],
+      attribution: "&copy; OpenStreetMap &copy; CARTO",
+    },
     osm: {
       tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
       attribution: "&copy; OpenStreetMap contributors",
     },
     esri: {
       tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+      attribution: "Tiles &copy; Esri",
+    },
+    esri_topo: {
+      tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"],
       attribution: "Tiles &copy; Esri",
     },
   };
@@ -110,6 +221,10 @@
     classes: [],
     statsRows: [],
     indexStats: null,
+    sbStats: null,
+    lastPrintBox: null,
+    gisTool: "identify",
+    measurePoints: [],
     overlayDataUrl: null,
     map: null,
     lastReport: null,
@@ -264,11 +379,17 @@
       const row = document.createElement("div");
       row.className = "class-editor-row";
       const hex = rgbToHex(cls.rgb);
+      const vis = cls.visible !== false;
       row.innerHTML = `
+        <input type="checkbox" ${vis ? "checked" : ""} title="Toggle class visibility" />
         <code>${cls.id}</code>
         <input type="color" value="${hex}" data-id="${cls.id}" />
         <input type="text" value="${cls.name}" data-id="${cls.id}" />
       `;
+      row.querySelector('input[type="checkbox"]').addEventListener("change", (e) => {
+        cls.visible = e.target.checked;
+        renderAll();
+      });
       row.querySelector('input[type="color"]').addEventListener("input", (e) => {
         cls.rgb = hexToRgb(e.target.value);
         renderAll();
@@ -346,6 +467,7 @@
           id: cid,
           name: `Class ${cid}`,
           rgb: [120, 120, 120],
+          visible: true,
           userEdited: false,
         }));
         applyPaletteToClasses($("paletteSelect").value);
@@ -357,6 +479,7 @@
     $("titleInput").value = fileName.toLowerCase().includes("bogura_boro")
       ? "Boro Area Mapping for Bogura - 2026"
       : stem;
+    $("sbBand").max = bandsCount;
     $("bandR").max = bandsCount;
     $("bandG").max = bandsCount;
     $("bandB").max = bandsCount;
@@ -381,65 +504,99 @@
     } else if (state.isCategorical) {
       $("modeSelect").value = "categorical";
     } else {
-      $("modeSelect").value = "index";
+      $("modeSelect").value = "singleband";
     }
 
+    state.measurePoints = [];
     renderClassEditorRows();
     updateControlVisibility();
     renderAll();
     $("downloadPngBtn").disabled = false;
     $("downloadCsvBtn").disabled = false;
     $("downloadJsonBtn").disabled = false;
+    $("downloadQmlBtn").disabled = false;
+    $("downloadSldBtn").disabled = false;
   }
 
   function updateControlVisibility() {
     const mode = $("modeSelect").value;
     $("categoricalControls").classList.toggle("hidden", mode !== "categorical");
+    $("singlebandControls").classList.toggle("hidden", mode !== "singleband");
     $("rgbControls").classList.toggle("hidden", mode !== "rgb");
     $("indexControls").classList.toggle("hidden", mode !== "index");
+    if ($("sbCustomRange")) {
+      $("sbCustomRange").classList.toggle("hidden", $("sbStretch").value !== "custom");
+    }
   }
 
-  function colormapLookup(name, t) {
-    const u = Math.max(0, Math.min(1, t));
-    if (name === "Blues") {
-      return [Math.round(247 - 239 * u), Math.round(251 - 203 * u), Math.round(255 - 148 * u)];
-    }
-    if (name === "RdBu") {
-      if (u < 0.5) {
-        const k = u * 2;
-        return [Math.round(178 + 69 * k), Math.round(24 + 223 * k), Math.round(43 + 204 * k)];
-      }
-      const k = (u - 0.5) * 2;
-      return [Math.round(247 - 214 * k), Math.round(247 - 145 * k), Math.round(247 - 75 * k)];
-    }
-    if (name === "Viridis") {
-      return [
-        Math.round(68 + 185 * Math.pow(u, 1.5)),
-        Math.round(1 + 230 * Math.sin(u * Math.PI * 0.5)),
-        Math.round(84 + 100 * (1 - Math.abs(2 * u - 1)) - 47 * u),
-      ];
-    }
-    // RdYlGn default
-    if (u < 0.5) {
-      const k = u * 2;
-      return [Math.round(165 + 90 * k), Math.round(0 + 255 * k), Math.round(38 + 153 * k)];
-    }
-    const k = (u - 0.5) * 2;
-    return [Math.round(255 - 255 * k), Math.round(255 - 151 * k), Math.round(191 - 136 * k)];
+  const COLOR_RAMPS = {
+    RdYlGn: [[165, 0, 38], [244, 109, 67], [254, 224, 139], [217, 239, 139], [102, 189, 99], [0, 104, 55]],
+    Blues: [[247, 251, 255], [198, 219, 239], [107, 174, 214], [33, 113, 181], [8, 48, 107]],
+    RdBu: [[178, 24, 43], [239, 138, 98], [247, 247, 247], [103, 169, 207], [33, 102, 172]],
+    Viridis: [[68, 1, 84], [59, 82, 139], [33, 145, 140], [94, 201, 98], [253, 231, 37]],
+    Plasma: [[13, 8, 135], [126, 3, 168], [204, 71, 120], [248, 149, 64], [240, 249, 33]],
+    Inferno: [[0, 0, 4], [87, 16, 110], [188, 55, 84], [249, 142, 9], [252, 255, 164]],
+    Magma: [[0, 0, 4], [81, 18, 124], [183, 55, 121], [252, 137, 97], [252, 253, 191]],
+    Turbo: [[48, 18, 59], [40, 188, 235], [164, 252, 60], [251, 126, 33], [122, 4, 3]],
+    Terrain: [[51, 51, 153], [0, 153, 102], [204, 204, 102], [153, 102, 51], [255, 255, 255]],
+    Spectral: [[158, 1, 66], [244, 109, 67], [255, 255, 191], [102, 194, 165], [94, 79, 162]],
+    BrBG: [[84, 48, 5], [191, 129, 45], [245, 245, 245], [53, 151, 143], [0, 60, 48]],
+    YlOrRd: [[255, 255, 204], [254, 217, 118], [253, 141, 60], [227, 26, 28], [128, 0, 38]],
+    Grayscale: [[15, 15, 15], [128, 128, 128], [245, 245, 245]],
+  };
+
+  function colormapLookup(name, t, invert = false) {
+    let u = Math.max(0, Math.min(1, t));
+    if (invert) u = 1 - u;
+    const stops = COLOR_RAMPS[name] || COLOR_RAMPS.RdYlGn;
+    const scaled = u * (stops.length - 1);
+    const i = Math.min(stops.length - 2, Math.floor(scaled));
+    const f = scaled - i;
+    const a = stops[i];
+    const b = stops[i + 1];
+    return [
+      Math.round(a[0] + (b[0] - a[0]) * f),
+      Math.round(a[1] + (b[1] - a[1]) * f),
+      Math.round(a[2] + (b[2] - a[2]) * f),
+    ];
   }
 
-  function computePercentileRange(arr, nodata) {
+  function computeBandStatsAndStretch(arr, nodata, stretchMode = "p2_98", customMin = NaN, customMax = NaN) {
     const step = Math.max(1, Math.floor(arr.length / 80000));
     const sample = [];
+    let sum = 0;
+    let mn = Infinity;
+    let mx = -Infinity;
     for (let i = 0; i < arr.length; i += step) {
       const v = arr[i];
-      if ((nodata === null || v !== nodata) && Number.isFinite(v)) sample.push(v);
+      if ((nodata === null || v !== nodata) && Number.isFinite(v)) {
+        sample.push(v);
+        sum += v;
+        if (v < mn) mn = v;
+        if (v > mx) mx = v;
+      }
     }
-    if (!sample.length) return [0, 255];
-    sample.sort((a, b) => a - b);
-    const lo = sample[Math.floor(0.02 * (sample.length - 1))];
-    const hi = sample[Math.floor(0.98 * (sample.length - 1))];
-    return hi > lo ? [lo, hi] : [lo, lo + 1];
+    if (!sample.length) return { lo: 0, hi: 255, min: 0, max: 0, mean: 0, std: 0, count: 0 };
+    const mean = sum / sample.length;
+    let sq = 0;
+    for (let i = 0; i < sample.length; i++) sq += (sample[i] - mean) * (sample[i] - mean);
+    const std = Math.sqrt(sq / sample.length);
+
+    let lo = mn;
+    let hi = mx;
+    if (stretchMode === "custom" && Number.isFinite(customMin) && Number.isFinite(customMax) && customMax > customMin) {
+      lo = customMin;
+      hi = customMax;
+    } else if (stretchMode === "stddev2" && std > 0) {
+      lo = Math.max(mn, mean - 2 * std);
+      hi = Math.min(mx, mean + 2 * std);
+    } else if (stretchMode === "p2_98") {
+      sample.sort((a, b) => a - b);
+      lo = sample[Math.floor(0.02 * (sample.length - 1))];
+      hi = sample[Math.floor(0.98 * (sample.length - 1))];
+    }
+    if (!(hi > lo)) hi = lo + 1;
+    return { lo, hi, min: mn, max: mx, mean, std, count: sample.length };
   }
 
   function buildRasterOffscreen() {
@@ -455,13 +612,16 @@
 
     state.statsRows = [];
     state.indexStats = null;
+    state.sbStats = null;
 
     if (mode === "categorical" && state.classes.length) {
       const band = state.rasters[0];
       const lut = new Map();
+      const visLut = new Map();
       const counts = new Map();
       state.classes.forEach((c) => {
         lut.set(c.id, c.rgb);
+        visLut.set(c.id, c.visible !== false);
         counts.set(c.id, 0);
       });
 
@@ -473,10 +633,14 @@
         if (rgb) {
           counts.set(v, (counts.get(v) || 0) + 1);
           validSample++;
-          px[p] = rgb[0];
-          px[p + 1] = rgb[1];
-          px[p + 2] = rgb[2];
-          px[p + 3] = 255;
+          if (visLut.get(v)) {
+            px[p] = rgb[0];
+            px[p + 1] = rgb[1];
+            px[p + 2] = rgb[2];
+            px[p + 3] = 255;
+          } else {
+            px[p + 3] = 0;
+          }
         } else {
           px[p] = 255;
           px[p + 1] = 255;
@@ -503,12 +667,49 @@
           area_km2: areaM2 !== null ? Number((areaM2 / 1e6).toFixed(4)) : null,
         };
       });
+    } else if (mode === "singleband") {
+      const bi = Math.max(0, Math.min(state.bandsCount - 1, (parseInt($("sbBand").value, 10) || 1) - 1));
+      const band = state.rasters[bi];
+      const stretch = $("sbStretch").value;
+      const cMin = parseFloat($("sbMin").value);
+      const cMax = parseFloat($("sbMax").value);
+      const cmap = $("sbCmap").value;
+      const invert = $("sbInvertCheck").checked;
+      const st = computeBandStatsAndStretch(band, state.nodata, stretch, cMin, cMax);
+      for (let i = 0; i < rw * rh; i++) {
+        const v = band[i];
+        const p = i * 4;
+        if ((state.nodata !== null && v === state.nodata) || !Number.isFinite(v)) {
+          px[p + 3] = 0;
+          continue;
+        }
+        const rgb = colormapLookup(cmap, (v - st.lo) / (st.hi - st.lo), invert);
+        px[p] = rgb[0];
+        px[p + 1] = rgb[1];
+        px[p + 2] = rgb[2];
+        px[p + 3] = 255;
+      }
+      state.sbStats = {
+        band: bi + 1,
+        stretch,
+        cmap,
+        invert,
+        lo: Number(st.lo.toFixed(4)),
+        hi: Number(st.hi.toFixed(4)),
+        min: Number(st.min.toFixed(4)),
+        max: Number(st.max.toFixed(4)),
+        mean: Number(st.mean.toFixed(4)),
+        std: Number(st.std.toFixed(4)),
+      };
     } else if (mode === "rgb") {
       const bi = ["bandR", "bandG", "bandB"].map((id) =>
         Math.max(0, Math.min(state.bandsCount - 1, (parseInt($(id).value, 10) || 1) - 1))
       );
+      const stretch = $("rgbStretch") ? $("rgbStretch").value : "p2_98";
+      const gamma = $("rgbGamma") ? Math.max(0.2, parseFloat($("rgbGamma").value) || 1.0) : 1.0;
+      const invGamma = 1 / gamma;
       const bands = bi.map((idx) => state.rasters[idx]);
-      const ranges = bands.map((b) => computePercentileRange(b, state.nodata));
+      const ranges = bands.map((b) => computeBandStatsAndStretch(b, state.nodata, stretch));
       for (let i = 0; i < rw * rh; i++) {
         const p = i * 4;
         let masked = false;
@@ -518,8 +719,9 @@
             masked = true;
             break;
           }
-          const [lo, hi] = ranges[c];
-          px[p + c] = Math.max(0, Math.min(255, Math.round(((v - lo) / (hi - lo)) * 255)));
+          const { lo, hi } = ranges[c];
+          const norm = Math.max(0, Math.min(1, (v - lo) / (hi - lo)));
+          px[p + c] = Math.round(Math.pow(norm, invGamma) * 255);
         }
         px[p + 3] = masked ? 0 : 255;
       }
@@ -530,6 +732,7 @@
       const bA = state.rasters[ia];
       const bB = state.rasters[ib];
       const cmap = $("idxCmap").value;
+      const invert = $("idxInvertCheck") ? $("idxInvertCheck").checked : false;
       let sum = 0;
       let cnt = 0;
       let mn = Infinity;
@@ -549,7 +752,7 @@
         cnt++;
         if (val < mn) mn = val;
         if (val > mx) mx = val;
-        const rgb = colormapLookup(cmap, (val + 1) / 2);
+        const rgb = colormapLookup(cmap, (val + 1) / 2, invert);
         px[p] = rgb[0];
         px[p + 1] = rgb[1];
         px[p + 2] = rgb[2];
@@ -813,6 +1016,7 @@
     }
     const imgX = padL + (boxW - drawW) / 2;
     const imgY = padT + reserveTop + (availH - drawH) / 2;
+    state.lastPrintBox = { imgX, imgY, drawW, drawH };
     ctx.imageSmoothingEnabled = $("modeSelect").value !== "categorical";
     ctx.drawImage(offscreen, imgX, imgY, drawW, drawH);
 
@@ -904,8 +1108,9 @@
 
     // Bottom-left Legend card
     const mode = $("modeSelect").value;
-    if (mode === "categorical" && state.classes.length) {
-      const shown = state.classes.slice(0, 10);
+    const visClasses = state.classes.filter((c) => c.visible !== false);
+    if (mode === "categorical" && visClasses.length) {
+      const shown = visClasses.slice(0, 10);
       const legW = 250;
       const rowH = 24;
       const legH = 38 + shown.length * rowH;
@@ -933,7 +1138,7 @@
         ctx.fillStyle = "#0f172a";
         ctx.fillText(cls.name.slice(0, 26), lx + 44, ry + 1);
       });
-    } else if (mode === "index") {
+    } else if (mode === "index" || mode === "singleband") {
       const lx = padL + 18;
       const ly = padT + boxH - 70;
       ctx.fillStyle = "rgba(255,255,255,0.92)";
@@ -943,18 +1148,24 @@
       ctx.fillStyle = "#0f172a";
       ctx.font = "bold 12.5px sans-serif";
       ctx.textAlign = "left";
-      ctx.fillText($("indexType").value.toUpperCase(), lx + 10, ly + 8);
-      const cmap = $("idxCmap").value;
+      const isSb = mode === "singleband" && state.sbStats;
+      const titleTxt = isSb ? `BAND ${state.sbStats.band}` : $("indexType").value.toUpperCase();
+      ctx.fillText(titleTxt, lx + 10, ly + 8);
+      const cmap = isSb ? state.sbStats.cmap : $("idxCmap").value;
+      const invert = isSb ? state.sbStats.invert : ($("idxInvertCheck") ? $("idxInvertCheck").checked : false);
       for (let x = 0; x < 200; x++) {
-        const rgb = colormapLookup(cmap, x / 199);
+        const rgb = colormapLookup(cmap, x / 199, invert);
         ctx.fillStyle = rgbToHex(rgb);
         ctx.fillRect(lx + 14 + x, ly + 28, 2, 12);
       }
       ctx.font = "11px monospace";
       ctx.fillStyle = "#0f172a";
-      ctx.fillText("-1.0", lx + 14, ly + 42);
-      ctx.fillText("0.0", lx + 104, ly + 42);
-      ctx.fillText("+1.0", lx + 190, ly + 42);
+      const loLbl = isSb ? state.sbStats.lo.toFixed(1) : "-1.0";
+      const midLbl = isSb ? ((state.sbStats.lo + state.sbStats.hi) / 2).toFixed(1) : "0.0";
+      const hiLbl = isSb ? state.sbStats.hi.toFixed(1) : "+1.0";
+      ctx.fillText(loLbl, lx + 14, ly + 42);
+      ctx.fillText(midLbl, lx + 98, ly + 42);
+      ctx.fillText(hiLbl, lx + 184, ly + 42);
     }
   }
 
@@ -1009,8 +1220,11 @@
     } else if (state.indexStats) {
       const s = state.indexStats;
       wrap.innerHTML = `<div style="font-size:13.5px;"><strong>${s.index}</strong> (Bands ${s.bandA}, ${s.bandB}) · Min: <code>${s.min}</code> · Max: <code>${s.max}</code> · Mean: <code>${s.mean}</code></div>`;
+    } else if (state.sbStats) {
+      const s = state.sbStats;
+      wrap.innerHTML = `<div style="font-size:13.5px;"><strong>Singleband Pseudocolor — Band ${s.band}</strong> (<code>${s.stretch}</code>, ${s.cmap}) · Min: <code>${s.min}</code> · Max: <code>${s.max}</code> · Mean: <code>${s.mean}</code> · σ: <code>${s.std}</code></div>`;
     } else {
-      wrap.innerHTML = `<div style="font-size:13.5px;color:#475569;">RGB Composite preview rendered from bands [${$("bandR").value}, ${$("bandG").value}, ${$("bandB").value}] with 2%–98% linear stretch.</div>`;
+      wrap.innerHTML = `<div style="font-size:13.5px;color:#475569;">RGB Composite preview rendered from bands [${$("bandR").value}, ${$("bandG").value}, ${$("bandB").value}] (${$("rgbStretch")?.value || "p2_98"}, γ=${$("rgbGamma")?.value || "1.00"}).</div>`;
     }
 
     state.lastReport = {
@@ -1026,7 +1240,104 @@
       bounds_wgs84: state.boundsWgs84,
       classes: state.statsRows,
       spectral_index: state.indexStats,
+      singleband: state.sbStats,
     };
+  }
+
+  function escapeXml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function haversineMeters(p1, p2) {
+    const R = 6371008.8;
+    const toRad = (d) => (d * Math.PI) / 180;
+    const dLat = toRad(p2[1] - p1[1]);
+    const dLon = toRad(p2[0] - p1[0]);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(p1[1])) * Math.cos(toRad(p2[1])) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+
+  function geodesicAreaM2(pts) {
+    if (pts.length < 3) return 0;
+    const R = 6371008.8;
+    const toRad = (d) => (d * Math.PI) / 180;
+    let total = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const [lon1, lat1] = pts[i];
+      const [lon2, lat2] = pts[(i + 1) % pts.length];
+      total += toRad(lon2 - lon1) * (2 + Math.sin(toRad(lat1)) + Math.sin(toRad(lat2)));
+    }
+    return Math.abs((total * R * R) / 2);
+  }
+
+  function identifyAtColRow(col, row, lonLat = null) {
+    if (!state.rasters || col < 0 || row < 0 || col >= state.readW || row >= state.readH) return;
+    const idx = row * state.readW + col;
+    const fullC = Math.round((col / state.readW) * state.width);
+    const fullR = Math.round((row / state.readH) * state.height);
+    const mode = $("modeSelect").value;
+    const posStr = lonLat ? `${lonLat[0].toFixed(5)}°, ${lonLat[1].toFixed(5)}° · ` : "";
+    let info = "";
+    if (mode === "categorical") {
+      const val = Math.round(state.rasters[0][idx]);
+      const cls = state.classes.find((c) => c.id === val);
+      info = cls ? `Class ${val} (${cls.name})` : `Value ${val}`;
+    } else if (mode === "singleband") {
+      const bi = Math.max(0, Math.min(state.bandsCount - 1, (parseInt($("sbBand").value, 10) || 1) - 1));
+      const v = state.rasters[bi][idx];
+      info = `Band ${bi + 1} = ${Number.isFinite(v) ? v.toFixed(4) : "nodata"}`;
+    } else if (mode === "rgb") {
+      const bi = ["bandR", "bandG", "bandB"].map((id) =>
+        Math.max(0, Math.min(state.bandsCount - 1, (parseInt($(id).value, 10) || 1) - 1))
+      );
+      const vals = bi.map((b) => state.rasters[b][idx]);
+      info = `RGB=[${vals.map((v) => (Number.isFinite(v) ? Number(v.toFixed(2)) : "na")).join(", ")}]`;
+    } else {
+      const ia = Math.max(0, Math.min(state.bandsCount - 1, (parseInt($("idxBandA").value, 10) || 1) - 1));
+      const ib = Math.max(0, Math.min(state.bandsCount - 1, (parseInt($("idxBandB").value, 10) || 1) - 1));
+      const va = state.rasters[ia][idx];
+      const vb = state.rasters[ib][idx];
+      const val = Math.abs(va + vb) < 1e-9 ? NaN : (va - vb) / (va + vb);
+      info = `${$("indexType").value.toUpperCase()} = ${Number.isFinite(val) ? val.toFixed(4) : "nodata"}`;
+    }
+    $("identifyBar").textContent = `${posStr}px(${fullC}, ${fullR}): ${info}`;
+  }
+
+  function updateMeasureOverlay() {
+    const pts = state.measurePoints;
+    const feats = pts.map((c) => ({ type: "Feature", geometry: { type: "Point", coordinates: c } }));
+    if (state.gisTool === "distance" && pts.length >= 2) {
+      feats.push({ type: "Feature", geometry: { type: "LineString", coordinates: pts } });
+      let dist = 0;
+      for (let i = 1; i < pts.length; i++) dist += haversineMeters(pts[i - 1], pts[i]);
+      $("identifyBar").textContent = `Distance (${pts.length} pts): ${dist >= 1000 ? `${(dist / 1000).toFixed(3)} km` : `${dist.toFixed(1)} m`}`;
+    } else if (state.gisTool === "area" && pts.length >= 3) {
+      feats.push({ type: "Feature", geometry: { type: "Polygon", coordinates: [[...pts, pts[0]]] } });
+      const m2 = geodesicAreaM2(pts);
+      const ha = m2 / 10000;
+      $("identifyBar").textContent = `Area (${pts.length} vertices): ${ha.toFixed(2)} ha (${(m2 / 1e6).toFixed(4)} km²)`;
+    } else if (pts.length >= 1) {
+      $("identifyBar").textContent = `${state.gisTool === "area" ? "Area" : "Distance"}: click next point (${pts.length} placed)`;
+    }
+    if (state.map && state.map.getSource("measure-src")) {
+      state.map.getSource("measure-src").setData({ type: "FeatureCollection", features: feats });
+    }
+  }
+
+  function setGisTool(tool) {
+    state.gisTool = tool;
+    state.measurePoints = [];
+    ["toolIdentifyBtn", "toolDistBtn", "toolAreaBtn"].forEach((id, i) => {
+      const k = ["identify", "distance", "area"][i];
+      $(id).classList.toggle("active", k === tool);
+    });
+    updateMeasureOverlay();
+    if (tool === "identify") {
+      $("identifyBar").textContent = "Identify active — click Print Map or Web Map to inspect pixel values";
+    } else {
+      if ($("webMapView").classList.contains("hidden")) $("tabWebMapBtn").click();
+      $("identifyBar").textContent = `Measure ${tool} active — click points on the Interactive Web Map`;
+    }
   }
 
   function syncWebMap() {
@@ -1039,6 +1350,7 @@
     const coords = [[w, n], [e, n], [e, s], [w, s]];
     const bkey = $("basemapSelect").value;
     const bm = BASEMAP_TILES[bkey] || BASEMAP_TILES.positron;
+    const resamp = $("resampleSelect") ? $("resampleSelect").value : "nearest";
 
     if (!state.map) {
       state.map = new maplibregl.Map({
@@ -1048,6 +1360,7 @@
           sources: {
             basemap: { type: "raster", tiles: bm.tiles, tileSize: 256, attribution: bm.attribution },
             lulc: { type: "image", url: state.overlayDataUrl, coordinates: coords },
+            "measure-src": { type: "geojson", data: { type: "FeatureCollection", features: [] } },
           },
           layers: [
             { id: "basemap-layer", type: "raster", source: "basemap" },
@@ -1055,7 +1368,27 @@
               id: "lulc-layer",
               type: "raster",
               source: "lulc",
-              paint: { "raster-opacity": Number($("opacitySlider").value) / 100, "raster-resampling": "nearest" },
+              paint: { "raster-opacity": Number($("opacitySlider").value) / 100, "raster-resampling": resamp },
+            },
+            {
+              id: "measure-fill",
+              type: "fill",
+              source: "measure-src",
+              filter: ["==", "$type", "Polygon"],
+              paint: { "fill-color": "#0284c7", "fill-opacity": 0.25 },
+            },
+            {
+              id: "measure-line",
+              type: "line",
+              source: "measure-src",
+              paint: { "line-color": "#0ea5e9", "line-width": 2.5 },
+            },
+            {
+              id: "measure-pts",
+              type: "circle",
+              source: "measure-src",
+              filter: ["==", "$type", "Point"],
+              paint: { "circle-radius": 4.5, "circle-color": "#ffffff", "circle-stroke-color": "#0284c7", "circle-stroke-width": 2 },
             },
           ],
         },
@@ -1063,9 +1396,22 @@
         zoom: 9,
       });
       state.map.addControl(new maplibregl.NavigationControl(), "top-right");
+      state.map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
       state.map.on("load", () => state.map.fitBounds([[w, s], [e, n]], { padding: 30, duration: 0 }));
       state.map.on("mousemove", (ev) => {
         $("mapCoords").textContent = `Lon: ${ev.lngLat.lng.toFixed(5)}°, Lat: ${ev.lngLat.lat.toFixed(5)}°`;
+      });
+      state.map.on("click", (ev) => {
+        const pt = [ev.lngLat.lng, ev.lngLat.lat];
+        if (state.gisTool === "distance" || state.gisTool === "area") {
+          state.measurePoints.push(pt);
+          updateMeasureOverlay();
+        } else if (state.boundsWgs84) {
+          const [bw, bs, be, bn] = state.boundsWgs84;
+          const col = Math.floor(((pt[0] - bw) / (be - bw)) * state.readW);
+          const row = Math.floor(((bn - pt[1]) / (bn - bs)) * state.readH);
+          identifyAtColRow(col, row, pt);
+        }
       });
     } else {
       const src = state.map.getSource("lulc");
@@ -1128,8 +1474,38 @@
     updateControlVisibility();
     renderAll();
   });
+  $("sbStretch").addEventListener("change", () => {
+    updateControlVisibility();
+    renderAll();
+  });
+  $("rgbGamma").addEventListener("input", () => {
+    $("rgbGammaVal").textContent = Number($("rgbGamma").value).toFixed(2);
+    renderAll();
+  });
   $("paletteSelect").addEventListener("change", () => {
     applyPaletteToClasses($("paletteSelect").value);
+    renderClassEditorRows();
+    renderAll();
+  });
+  $("invertPalBtn").addEventListener("click", () => {
+    if (state.classes.length < 2) return;
+    const cols = state.classes.map((c) => c.rgb).reverse();
+    state.classes.forEach((c, i) => {
+      c.rgb = cols[i];
+    });
+    renderClassEditorRows();
+    renderAll();
+  });
+  $("randomPalBtn").addEventListener("click", () => {
+    state.classes.forEach((c) => {
+      if (c.id !== 0) {
+        c.rgb = [
+          Math.floor(40 + Math.random() * 195),
+          Math.floor(40 + Math.random() * 195),
+          Math.floor(40 + Math.random() * 195),
+        ];
+      }
+    });
     renderClassEditorRows();
     renderAll();
   });
@@ -1145,11 +1521,41 @@
   });
 
   [
-    "titleInput", "bandR", "bandG", "bandB", "indexType", "idxBandA", "idxBandB", "idxCmap",
-    "pageSizeSelect", "orientationSelect", "arrowStyleSelect", "scalebarStyleSelect", "gridCheck",
+    "titleInput", "sbBand", "sbStretch", "sbMin", "sbMax", "sbCmap", "sbInvertCheck",
+    "bandR", "bandG", "bandB", "rgbStretch", "indexType", "idxBandA", "idxBandB", "idxCmap",
+    "idxInvertCheck", "pageSizeSelect", "orientationSelect", "arrowStyleSelect",
+    "scalebarStyleSelect", "gridCheck",
   ].forEach((id) => {
     $(id).addEventListener("input", renderAll);
     $(id).addEventListener("change", renderAll);
+  });
+
+  canvas.addEventListener("click", (ev) => {
+    if (!state.lastPrintBox || !state.rasters) return;
+    const rect = canvas.getBoundingClientRect();
+    const cx = ((ev.clientX - rect.left) * canvas.width) / rect.width;
+    const cy = ((ev.clientY - rect.top) * canvas.height) / rect.height;
+    const { imgX, imgY, drawW, drawH } = state.lastPrintBox;
+    if (cx < imgX || cx > imgX + drawW || cy < imgY || cy > imgY + drawH) return;
+    const fx = (cx - imgX) / drawW;
+    const fy = (cy - imgY) / drawH;
+    const col = Math.floor(fx * state.readW);
+    const row = Math.floor(fy * state.readH);
+    let lonLat = null;
+    if (state.boundsWgs84) {
+      const [w, s, e, n] = state.boundsWgs84;
+      lonLat = [w + fx * (e - w), n - fy * (n - s)];
+    }
+    identifyAtColRow(col, row, lonLat);
+  });
+
+  $("toolIdentifyBtn").addEventListener("click", () => setGisTool("identify"));
+  $("toolDistBtn").addEventListener("click", () => setGisTool("distance"));
+  $("toolAreaBtn").addEventListener("click", () => setGisTool("area"));
+  $("toolClearMeasureBtn").addEventListener("click", () => {
+    state.measurePoints = [];
+    updateMeasureOverlay();
+    $("identifyBar").textContent = "Measurements cleared";
   });
 
   $("tabPrintBtn").addEventListener("click", () => {
@@ -1170,6 +1576,17 @@
     if (!state.map) return;
     const bm = BASEMAP_TILES[$("basemapSelect").value] || BASEMAP_TILES.positron;
     state.map.getSource("basemap").setTiles(bm.tiles);
+  });
+  $("resampleSelect").addEventListener("change", () => {
+    if (state.map && state.map.getLayer("lulc-layer")) {
+      state.map.setPaintProperty("lulc-layer", "raster-resampling", $("resampleSelect").value);
+    }
+  });
+  $("zoomLayerBtn").addEventListener("click", () => {
+    if (state.map && state.boundsWgs84) {
+      const [w, s, e, n] = state.boundsWgs84;
+      state.map.fitBounds([[w, s], [e, n]], { padding: 30, duration: 350 });
+    }
   });
   $("opacitySlider").addEventListener("input", () => {
     const op = Number($("opacitySlider").value);
@@ -1204,6 +1621,9 @@
     } else if (state.indexStats) {
       const s = state.indexStats;
       csv = `index,band_a,band_b,valid_pixels,min,max,mean\n${s.index},${s.bandA},${s.bandB},${s.valid_pixels},${s.min},${s.max},${s.mean}\n`;
+    } else if (state.sbStats) {
+      const s = state.sbStats;
+      csv = `band,stretch,cmap,min,max,mean,std\n${s.band},${s.stretch},${s.cmap},${s.min},${s.max},${s.mean},${s.std}\n`;
     } else {
       csv = `file_name,width,height,bands\n"${state.fileName}",${state.width},${state.height},${state.bandsCount}\n`;
     }
@@ -1218,6 +1638,59 @@
       `${stem}_report.json`
     );
     window.dispatchEvent(new CustomEvent("lulckit:export", { detail: { format: "json" } }));
+  });
+
+  $("downloadQmlBtn").addEventListener("click", () => {
+    const stem = (state.fileName || "lulckit").replace(/\.(tiff?|tif)$/i, "");
+    let qml = "";
+    if ($("modeSelect").value === "categorical" && state.classes.length) {
+      const rows = state.classes
+        .map((c) => `        <paletteEntry value="${c.id}" color="${rgbToHex(c.rgb).toLowerCase()}" alpha="${c.visible !== false ? 255 : 0}" label="${escapeXml(c.name)}"/>`)
+        .join("\n");
+      qml = `<!DOCTYPE qgis PUBLIC "http://mrcc.com/qgis.dtd" "SYSTEM">\n<qgis version="3.34.0" styleCategories="Symbology">\n  <pipe>\n    <rasterrenderer type="paletted" band="1" opacity="1" alphaBand="-1">\n      <colorPalette>\n${rows}\n      </colorPalette>\n    </rasterrenderer>\n  </pipe>\n</qgis>\n`;
+    } else {
+      const isSb = $("modeSelect").value === "singleband" && state.sbStats;
+      const lo = isSb ? state.sbStats.lo : -1;
+      const hi = isSb ? state.sbStats.hi : 1;
+      const cmap = isSb ? state.sbStats.cmap : $("idxCmap").value;
+      const inv = isSb ? state.sbStats.invert : $("idxInvertCheck").checked;
+      const band = isSb ? state.sbStats.band : 1;
+      const items = [0, 0.25, 0.5, 0.75, 1]
+        .map((t) => {
+          const val = (lo + (hi - lo) * t).toFixed(4);
+          return `          <item value="${val}" color="${rgbToHex(colormapLookup(cmap, t, inv)).toLowerCase()}" alpha="255" label="${val}"/>`;
+        })
+        .join("\n");
+      qml = `<!DOCTYPE qgis PUBLIC "http://mrcc.com/qgis.dtd" "SYSTEM">\n<qgis version="3.34.0" styleCategories="Symbology">\n  <pipe>\n    <rasterrenderer type="singlebandpseudocolor" band="${band}" classificationMin="${lo}" classificationMax="${hi}" opacity="1">\n      <rastershader>\n        <colorrampshader colorRampType="INTERPOLATED">\n${items}\n        </colorrampshader>\n      </rastershader>\n    </rasterrenderer>\n  </pipe>\n</qgis>\n`;
+    }
+    downloadBlob(new Blob([qml], { type: "application/xml;charset=utf-8" }), `${stem}.qml`);
+  });
+
+  $("downloadSldBtn").addEventListener("click", () => {
+    const stem = (state.fileName || "lulckit").replace(/\.(tiff?|tif)$/i, "");
+    const safeStem = escapeXml(stem);
+    let entries = "";
+    let cmType = "values";
+    if ($("modeSelect").value === "categorical" && state.classes.length) {
+      entries = state.classes
+        .map((c) => `            <ColorMapEntry color="${rgbToHex(c.rgb)}" quantity="${c.id}" label="${escapeXml(c.name)}" opacity="${c.visible !== false ? "1.0" : "0.0"}"/>`)
+        .join("\n");
+    } else {
+      cmType = "ramp";
+      const isSb = $("modeSelect").value === "singleband" && state.sbStats;
+      const lo = isSb ? state.sbStats.lo : -1;
+      const hi = isSb ? state.sbStats.hi : 1;
+      const cmap = isSb ? state.sbStats.cmap : $("idxCmap").value;
+      const inv = isSb ? state.sbStats.invert : $("idxInvertCheck").checked;
+      entries = [0, 0.25, 0.5, 0.75, 1]
+        .map((t) => {
+          const val = (lo + (hi - lo) * t).toFixed(4);
+          return `            <ColorMapEntry color="${rgbToHex(colormapLookup(cmap, t, inv))}" quantity="${val}" label="${val}" opacity="1.0"/>`;
+        })
+        .join("\n");
+    }
+    const sld = `<?xml version="1.0" encoding="UTF-8"?>\n<StyledLayerDescriptor version="1.0.0" xmlns="http://www.opengis.net/sld">\n  <NamedLayer>\n    <Name>${safeStem}</Name>\n    <UserStyle>\n      <Title>${safeStem}</Title>\n      <FeatureTypeStyle>\n        <Rule>\n          <RasterSymbolizer>\n            <ColorMap type="${cmType}">\n${entries}\n            </ColorMap>\n          </RasterSymbolizer>\n        </Rule>\n      </FeatureTypeStyle>\n    </UserStyle>\n  </NamedLayer>\n</StyledLayerDescriptor>\n`;
+    downloadBlob(new Blob([sld], { type: "application/xml;charset=utf-8" }), `${stem}.sld`);
   });
 
   // --- Website UI Polish: Theme Toggle, Multi-Tab Install, Interactive Terminal, Compare Slider, GitHub Stars ---

@@ -40,7 +40,26 @@ from .runner import (
 )
 
 MODEL_OPTIONS = ["auto", "categorical", "rgb-oem", "rgb-fast", "s2-dw"]
-PALETTE_OPTIONS = ["default", "arcgis-crop", "vivid", "earth", "pastel", "colorblind", "viridis", "RdYlGn"]
+PALETTE_OPTIONS = [
+    "default",
+    "arcgis-crop",
+    "esa-worldcover",
+    "esri-lulc",
+    "dynamic-world",
+    "nlcd",
+    "corine",
+    "qgis-spectral",
+    "arcgis-topo",
+    "urban-heat",
+    "hydrology",
+    "ag-phenology",
+    "vivid",
+    "earth",
+    "pastel",
+    "colorblind",
+    "viridis",
+    "RdYlGn",
+]
 PAGE_SIZE_OPTIONS = ["a4", "a5", "a3", "letter", "legal", "square", "auto"]
 ORIENTATION_OPTIONS = ["auto", "landscape", "portrait"]
 ARROW_OPTIONS = ["compass", "classic", "fancy", "minimal", "none"]
@@ -50,7 +69,21 @@ DEVICE_OPTIONS = ["auto", "cpu", "cuda", "mps"]
 BAND_MODES = ["index", "composite", "rgb", "band"]
 INDEX_OPTIONS = ["ndvi", "ndwi", "ndbi", "savi", "evi"]
 COMPOSITE_OPTIONS = ["true-color", "false-color-nir", "agriculture", "swir"]
-INDEX_CMAP_OPTIONS = ["", "RdYlGn", "Blues", "RdBu", "viridis", "gray"]
+INDEX_CMAP_OPTIONS = [
+    "",
+    "RdYlGn",
+    "Blues",
+    "RdBu",
+    "viridis",
+    "plasma",
+    "inferno",
+    "turbo",
+    "terrain",
+    "Spectral",
+    "BrBG",
+    "YlOrRd",
+    "gray",
+]
 
 
 def _resolve_enum(cls: Any, group: str, member: str) -> Any:

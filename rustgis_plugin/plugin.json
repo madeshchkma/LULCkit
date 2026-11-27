@@ -1,7 +1,7 @@
 {
   "id": "lulckit",
   "name": "LULCkit",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Turn any optical or pre-classified GeoTIFF into Cloud-Optimized LULC maps with named legends, multi-band COG exports, Sentinel-2/Landsat folder stacks, spectral indices (NDVI, NDWI, MNDWI, NDBI, SAVI, EVI, NBR), and print cartography.",
   "author": "Madesh Chakma",
   "homepage": "https://github.com/madeshchkma/LULCkit",
@@ -94,7 +94,28 @@
           "name": "palette",
           "label": "Palette",
           "kind": "choice",
-          "choices": ["default", "arcgis-crop", "vivid", "earth", "pastel", "colorblind", "viridis", "RdYlGn"],
+          "choices": [
+            "default",
+            "arcgis-crop",
+            "esa-worldcover",
+            "esri-lulc",
+            "dynamic-world",
+            "nlcd",
+            "corine",
+            "qgis-spectral",
+            "arcgis-topo",
+            "urban-heat",
+            "hydrology",
+            "ag-phenology",
+            "vivid",
+            "earth",
+            "pastel",
+            "colorblind",
+            "viridis",
+            "turbo",
+            "RdYlGn",
+            "Spectral"
+          ],
           "default": "default"
         },
         {

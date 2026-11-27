@@ -5,6 +5,13 @@ All notable changes to `LULCkit` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-11-27
+
+### Added
+- 10 new standard GIS & EO palettes across Python core, CLI, Spaces, QGIS, RustGIS, and Browser Studio (16 palettes total: `esa-worldcover`, `esri-lulc`, `dynamic-world`, `nlcd`, `corine`, `qgis-spectral`, `arcgis-topo`, `urban-heat`, `hydrology`, `ag-phenology`, plus the 6 existing presets).
+- QGIS `.qml` (`--qml`) and OGC `.sld` (`--sld`) layer style XML exporters (`write_qgis_qml_style`, `write_sld_style`) in `lulc map` and client-side Browser Studio.
+- ArcGIS Pro / QGIS parity tools in Browser GeoTIFF Studio (`docs/`): Singleband Pseudocolor stretch mode (`2%–98%`, `Min–Max`, `Mean ± 2σ`, `Custom`), RGB Stretch + Gamma slider, 13 continuous color ramps with Invert Ramp, Class Visibility checkboxes + Invert/Randomize palette, Legal print size, click Identify Pixel on both Print Map & Web Map, geodesic Distance & Area measurement tools, Zoom to Layer, Resampling (`nearest`/`linear`), and Dark Matter / Esri Topo basemaps.
+
 ## [0.3.0] - 2026-11-27
 
 ### Added

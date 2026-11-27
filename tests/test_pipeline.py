@@ -858,3 +858,43 @@ def test_spaces_handlers_and_pages_assets(tmp_path: Path) -> None:
     finally:
         if prev_png:
             shutil.rmtree(Path(prev_png).parent, ignore_errors=True)
+
+
+def test_expanded_palettes_and_qml_sld_export(tmp_path: Path) -> None:
+    """Verify all 16 palettes resolve cleanly and --qml/--sld emit valid GIS XML styles."""
+    import xml.etree.ElementTree as ET
+
+    from lulckit.cartography import PALETTES, resolve_palette_color, write_qgis_qml_style, write_sld_style
+    from lulckit.models.base import ClassSpec
+
+    assert len(PALETTES) == 16
+    for pal_name in PALETTES:
+        r, g, b = resolve_palette_color(pal_name, 0)
+        assert 0 <= r <= 255 and 0 <= g <= 255 and 0 <= b <= 255
+
+    classes = [
+        ClassSpec(id=0, name="Water & River", color=(0, 100, 200)),
+        ClassSpec(id=1, name="Crop", color=(56, 168, 0)),
+    ]
+    qml_out = write_qgis_qml_style(classes, tmp_path / "direct.qml")
+    sld_out = write_sld_style(classes, tmp_path / "direct.sld", layer_name="Test")
+    qml_root = ET.fromstring(qml_out.read_text(encoding="utf-8"))
+    sld_root = ET.fromstring(sld_out.read_text(encoding="utf-8"))
+    assert len(qml_root.findall(".//paletteEntry")) == 2
+    assert len(sld_root.findall(".//{http://www.opengis.net/sld}ColorMapEntry")) == 2
+
+    arr = np.zeros((1, 32, 32), dtype=np.uint8)
+    arr[0, :16, :16] = 1
+    tif = _write_geotiff(tmp_path / "cat.tif", arr, crs="EPSG:32645")
+    out_dir = tmp_path / "out_styles"
+    runner = CliRunner()
+    res = runner.invoke(
+        app,
+        ["map", str(tif), "-o", str(out_dir), "--palette", "esa-worldcover", "--qml", "--sld", "--no-preview"],
+    )
+    assert res.exit_code == 0, res.output
+    assert (out_dir / "cat_lulc.qml").is_file()
+    assert (out_dir / "cat_lulc.sld").is_file()
+    rep = json.loads((out_dir / "cat_report.json").read_text(encoding="utf-8"))
+    assert rep["output_files"]["qgis_qml"].endswith("cat_lulc.qml")
+    assert rep["output_files"]["sld_style"].endswith("cat_lulc.sld")

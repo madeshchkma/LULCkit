@@ -1,6 +1,6 @@
 # LULCkit
 
-> Open-source GeoTIFF cartography, Land Use / Land Cover (LULC) classification, spectral index, and area-reporting toolkit (MIT License, v0.3.0).
+> Open-source GeoTIFF cartography, Land Use / Land Cover (LULC) classification, spectral index, and area-reporting toolkit (MIT License, v0.3.1).
 
 ## Live Services
 - Website & Client-Side Browser GeoTIFF Studio: https://madeshchkma.github.io/LULCkit/
@@ -10,7 +10,7 @@
 
 ## Core Capabilities
 - `lulc inspect <tif>`: Profiles CRS/WKT, GSD in meters, WGS84 bounds/centroid, COG layout, GDAL/TIFF tags, and band statistics.
-- `lulc map <tif>`: Runs O(1)-RAM tiled LULC inference (`rgb-oem` SegFormer-B4, `rgb-fast` SegFormer-B0, custom `--hf-model` via `AutoModelForSemanticSegmentation` for SegFormer/UPerNet/Mask2Former/DPT, `s2-dw` Dynamic World, `categorical` pass-through) with `--tta` 4-way flip augmentation and `--sieve-size` speckle removal, exporting COG GeoTIFFs with GDAL `.aux.xml` named legends, A4/A5/A3/Letter print maps (`png`/`pdf`/`svg`), CSV/JSON reports, GeoJSON polygons, and MapLibre GL JS HTML viewers.
+- `lulc map <tif>`: Runs O(1)-RAM tiled LULC inference (`rgb-oem` SegFormer-B4, `rgb-fast` SegFormer-B0, custom `--hf-model` via `AutoModelForSemanticSegmentation` for SegFormer/UPerNet/Mask2Former/DPT, `s2-dw` Dynamic World, `categorical` pass-through) with 16 built-in GIS palettes, `--tta` 4-way flip augmentation, `--sieve-size` speckle removal, and QGIS `.qml` (`--qml`) / OGC `.sld` (`--sld`) style export alongside COG GeoTIFFs, GDAL `.aux.xml` legends, A4/A5/A3/Letter print maps (`png`/`pdf`/`svg`), CSV/JSON reports, GeoJSON polygons, and MapLibre GL JS HTML viewers.
 - `lulc bands <tif>`: Exports custom RGB composites, multi-band subset COGs, visual 8-bit RGB COGs, stacked Sentinel-2/Landsat SAFE folders, and stream-computes `NDVI`, `NDWI`, `MNDWI`, `NDBI`, `SAVI`, `EVI`, and `NBR`.
 - `lulc clip <tif> <geojson>`: Clips georeferenced rasters to polygon boundaries preserving colormaps and tags.
-- Plugins & Browser Studio (`docs/`): Native QGIS Processing plugin (`qgis_plugin/`), RustGIS plugin (`rustgis_plugin/`), and 100% client-side Browser Studio via `geotiff.js`, `proj4`, and HTML5 Canvas.
+- Plugins & Browser Studio (`docs/`): Native QGIS Processing plugin (`qgis_plugin/`), RustGIS plugin (`rustgis_plugin/`), and 100% client-side Browser Studio with Singleband Pseudocolor stretch, 16 palettes, 13 color ramps, Identify pixel inspector, geodesic Distance/Area measure tools, and `.qml`/`.sld`/PNG/CSV/JSON export via `geotiff.js`, `proj4`, and HTML5 Canvas.

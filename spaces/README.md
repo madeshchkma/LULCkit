@@ -12,7 +12,7 @@ license: mit
 short_description: Turn any GeoTIFF into LULC maps, indices & area reports
 ---
 
-# LULCkit Studio on Hugging Face Spaces (v0.3.0)
+# LULCkit Studio on Hugging Face Spaces (v0.3.1)
 
 Free GPU-accelerated (ZeroGPU) web UI for **[LULCkit](https://github.com/madeshchkma/LULCkit)** supporting:
 - **Pretrained & custom ML inference** (`rgb-oem` SegFormer-B4, `rgb-fast` SegFormer-B0, `s2-dw` Dynamic World, plus any custom Hugging Face semantic segmentation repo via `AutoModelForSemanticSegmentation` — SegFormer, UPerNet, Mask2Former, DPT)

@@ -51,7 +51,7 @@
         "applicationCategory": "DeveloperApplication",
         "applicationSubCategory": "GIS / Remote Sensing Software",
         "operatingSystem": "Windows, macOS, Linux, Web Browser",
-        "softwareVersion": "0.3.0",
+        "softwareVersion": "0.3.1",
         "license": "https://opensource.org/licenses/MIT",
         "url": "https://madeshchkma.github.io/LULCkit/",
         "codeRepository": "https://github.com/madeshchkma/LULCkit",
@@ -139,7 +139,7 @@
       <a class="brand-link" href="#">
         <img class="brand-icon" src="assets/favicon.svg" alt="LULCkit logo" width="34" height="34" />
         <span class="brand-wordmark">LULC<span>kit</span></span>
-        <span class="version-pill">v0.3.0</span>
+        <span class="version-pill">v0.3.1</span>
       </a>
 
       <nav class="nav-links" aria-label="Primary navigation">
@@ -253,6 +253,7 @@
             <label for="modeSelect">Studio Mode</label>
             <select id="modeSelect">
               <option value="categorical">Categorical / LULC Map</option>
+              <option value="singleband">Singleband Pseudocolor (QGIS / ArcGIS Stretch)</option>
               <option value="rgb">RGB Band Composite</option>
               <option value="index">Spectral Index (NDVI / NDWI / MNDWI / NDBI / NBR)</option>
             </select>
@@ -266,21 +267,77 @@
           <div id="categoricalControls" class="ctrl-group">
             <h3>Categorical Styling</h3>
             <div class="field">
-              <label for="paletteSelect">Color Palette</label>
+              <label for="paletteSelect">Color Palette (16 GIS Presets)</label>
               <select id="paletteSelect">
                 <option value="arcgis-crop" selected>arcgis-crop (ArcGIS Green / Red / Amber)</option>
                 <option value="default">default (Emerald / Terracotta / Blue)</option>
+                <option value="esa-worldcover">esa-worldcover (ESA WorldCover 10m)</option>
+                <option value="esri-lulc">esri-lulc (Esri / Impact Observatory)</option>
+                <option value="dynamic-world">dynamic-world (Google Dynamic World)</option>
+                <option value="nlcd">nlcd (USGS NLCD Standard)</option>
+                <option value="corine">corine (Copernicus CORINE Land Cover)</option>
+                <option value="qgis-spectral">qgis-spectral (QGIS Spectral Diverging)</option>
+                <option value="arcgis-topo">arcgis-topo (ArcGIS Terrain &amp; Elevation)</option>
+                <option value="urban-heat">urban-heat (LST &amp; Impervious Surface)</option>
+                <option value="hydrology">hydrology (Bathymetry &amp; Floodplain)</option>
+                <option value="ag-phenology">ag-phenology (Crop Growth &amp; Senescence)</option>
                 <option value="vivid">vivid (Okabe-Ito High Contrast)</option>
                 <option value="earth">earth (Muted Cartographic)</option>
                 <option value="pastel">pastel (ColorBrewer Soft)</option>
                 <option value="colorblind">colorblind (Accessible)</option>
               </select>
             </div>
+            <div class="pal-actions-row">
+              <button class="btn btn-sm" id="invertPalBtn" type="button">Invert Order</button>
+              <button class="btn btn-sm" id="randomPalBtn" type="button">Randomize Colors</button>
+            </div>
             <div id="classEditors"></div>
           </div>
 
+          <div id="singlebandControls" class="ctrl-group hidden">
+            <h3>Singleband Pseudocolor</h3>
+            <div class="field-row">
+              <div class="field"><label for="sbBand">Band (1-Based)</label><input id="sbBand" type="number" min="1" value="1" /></div>
+              <div class="field">
+                <label for="sbStretch">Contrast Stretch</label>
+                <select id="sbStretch">
+                  <option value="p2_98" selected>2%–98% Percentile</option>
+                  <option value="minmax">Min – Max</option>
+                  <option value="stddev2">Mean ± 2σ (StdDev)</option>
+                  <option value="custom">Custom Min / Max</option>
+                </select>
+              </div>
+            </div>
+            <div id="sbCustomRange" class="field-row hidden">
+              <div class="field"><label for="sbMin">Min Value</label><input id="sbMin" type="number" step="any" placeholder="auto" /></div>
+              <div class="field"><label for="sbMax">Max Value</label><input id="sbMax" type="number" step="any" placeholder="auto" /></div>
+            </div>
+            <div class="field">
+              <label for="sbCmap">Continuous Color Ramp</label>
+              <select id="sbCmap">
+                <option value="Viridis" selected>Viridis (Perceptual)</option>
+                <option value="Plasma">Plasma (Perceptual Warm)</option>
+                <option value="Inferno">Inferno (Thermal Dark)</option>
+                <option value="Magma">Magma (Night/Urban)</option>
+                <option value="Turbo">Turbo (High-Contrast ArcGIS)</option>
+                <option value="Terrain">Terrain (Hypsometric Elevation)</option>
+                <option value="RdYlGn">RdYlGn (Red-Yellow-Green)</option>
+                <option value="Spectral">Spectral (QGIS Multi-Hue)</option>
+                <option value="BrBG">BrBG (Brown-Blue-Green Moisture)</option>
+                <option value="YlOrRd">YlOrRd (Heat / Burn Severity)</option>
+                <option value="Blues">Blues (Water / Bathymetry)</option>
+                <option value="RdBu">RdBu (Diverging Anomaly)</option>
+                <option value="Grayscale">Grayscale (Black to White)</option>
+              </select>
+            </div>
+            <label class="check-row">
+              <input id="sbInvertCheck" type="checkbox" />
+              Invert Color Ramp
+            </label>
+          </div>
+
           <div id="rgbControls" class="ctrl-group hidden">
-            <h3>RGB Bands (1-Based)</h3>
+            <h3>RGB Composite &amp; Enhancement</h3>
             <div class="field">
               <label for="rgbPresetSelect">Quick Composite Preset</label>
               <select id="rgbPresetSelect">
@@ -289,12 +346,29 @@
                 <option value="4,3,2">Bands 4, 3, 2 (Sentinel-2 True Color)</option>
                 <option value="8,4,3">Bands 8, 4, 3 (False Color NIR)</option>
                 <option value="11,8,2">Bands 11, 8, 2 (Agriculture)</option>
+                <option value="12,11,4">Bands 12, 11, 4 (SWIR / Urban)</option>
+                <option value="8,11,4">Bands 8, 11, 4 (Land / Water)</option>
+                <option value="5,4,3">Bands 5, 4, 3 (Landsat 8/9 False Color)</option>
               </select>
             </div>
             <div class="field-row-3">
               <div class="field"><label for="bandR">Red</label><input id="bandR" type="number" min="1" value="1" /></div>
               <div class="field"><label for="bandG">Green</label><input id="bandG" type="number" min="1" value="2" /></div>
               <div class="field"><label for="bandB">Blue</label><input id="bandB" type="number" min="1" value="3" /></div>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="rgbStretch">Stretch Enhancement</label>
+                <select id="rgbStretch">
+                  <option value="p2_98" selected>2%–98% Clip</option>
+                  <option value="minmax">Min – Max</option>
+                  <option value="stddev2">Mean ± 2σ</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="rgbGamma">Gamma: <span id="rgbGammaVal">1.00</span></label>
+                <input id="rgbGamma" type="range" min="0.4" max="2.5" step="0.05" value="1.0" />
+              </div>
             </div>
           </div>
 
@@ -317,12 +391,25 @@
             <div class="field">
               <label for="idxCmap">Colormap</label>
               <select id="idxCmap">
-                <option value="RdYlGn">RdYlGn (Vegetation)</option>
+                <option value="RdYlGn" selected>RdYlGn (Vegetation)</option>
                 <option value="Blues">Blues (Water)</option>
                 <option value="RdBu">RdBu (Diverging)</option>
                 <option value="Viridis">Viridis (Perceptual)</option>
+                <option value="Plasma">Plasma (Perceptual Warm)</option>
+                <option value="Inferno">Inferno (Thermal Dark)</option>
+                <option value="Magma">Magma (Night/Urban)</option>
+                <option value="Turbo">Turbo (High-Contrast ArcGIS)</option>
+                <option value="Terrain">Terrain (Hypsometric)</option>
+                <option value="Spectral">Spectral (QGIS Multi-Hue)</option>
+                <option value="BrBG">BrBG (Moisture / Clay)</option>
+                <option value="YlOrRd">YlOrRd (Heat / Burn Severity)</option>
+                <option value="Grayscale">Grayscale</option>
               </select>
             </div>
+            <label class="check-row">
+              <input id="idxInvertCheck" type="checkbox" />
+              Invert Color Ramp
+            </label>
           </div>
 
           <div class="ctrl-group">
@@ -335,6 +422,7 @@
                   <option value="a5">A5</option>
                   <option value="a3">A3</option>
                   <option value="letter">Letter</option>
+                  <option value="legal">Legal</option>
                   <option value="square">Square</option>
                 </select>
               </div>
@@ -396,7 +484,19 @@
               <button class="btn btn-sm" id="downloadPngBtn" type="button" disabled>Download PNG</button>
               <button class="btn btn-sm" id="downloadCsvBtn" type="button" disabled>Download CSV</button>
               <button class="btn btn-sm" id="downloadJsonBtn" type="button" disabled>Download JSON</button>
+              <button class="btn btn-sm" id="downloadQmlBtn" type="button" disabled>QGIS .qml</button>
+              <button class="btn btn-sm" id="downloadSldBtn" type="button" disabled>OGC .sld</button>
             </div>
+          </div>
+
+          <div class="gis-toolbar" aria-label="ArcGIS / QGIS interactive map tools">
+            <div class="gis-tool-group">
+              <button class="btn btn-sm gis-tool-btn active" id="toolIdentifyBtn" type="button" title="Click Print Map or Web Map to inspect pixel values">Identify</button>
+              <button class="btn btn-sm gis-tool-btn" id="toolDistBtn" type="button" title="Click vertices on Interactive Web Map to measure geodesic distance">Measure Distance</button>
+              <button class="btn btn-sm gis-tool-btn" id="toolAreaBtn" type="button" title="Click polygon vertices on Interactive Web Map to measure area">Measure Area</button>
+              <button class="btn btn-sm" id="toolClearMeasureBtn" type="button">Clear</button>
+            </div>
+            <div class="identify-bar" id="identifyBar">Click map to Identify pixel value or choose a Measure tool</div>
           </div>
 
           <div id="printView" class="canvas-wrap">
@@ -409,11 +509,19 @@
               <label for="basemapSelect" style="font-weight:600;display:block;margin-bottom:4px;">Basemap</label>
               <select id="basemapSelect" style="width:100%;margin-bottom:8px;padding:4px;">
                 <option value="positron" selected>Carto Positron Light</option>
+                <option value="dark">Carto Dark Matter</option>
                 <option value="osm">OpenStreetMap</option>
                 <option value="esri">Esri World Imagery</option>
+                <option value="esri_topo">Esri World Topo</option>
+              </select>
+              <label for="resampleSelect" style="font-weight:600;display:block;margin-bottom:4px;">Resampling</label>
+              <select id="resampleSelect" style="width:100%;margin-bottom:8px;padding:4px;">
+                <option value="nearest" selected>Nearest Neighbor (Crisp)</option>
+                <option value="linear">Bilinear (Smooth)</option>
               </select>
               <label for="opacitySlider" style="font-weight:600;display:block;">Layer Opacity: <span id="opacityVal">85%</span></label>
               <input id="opacitySlider" type="range" min="0" max="100" value="85" style="width:100%;" />
+              <button class="btn btn-sm" id="zoomLayerBtn" type="button" style="width:100%;margin-top:8px;">Zoom to Layer Extent</button>
             </div>
             <div class="map-coords" id="mapCoords">Move cursor over map</div>
           </div>
@@ -444,7 +552,7 @@
               <span class="dot-amber"></span>
               <span class="dot-green"></span>
             </div>
-            <span class="video-topbar-title">LULCkit v0.3.0 — Guided Video Tour</span>
+            <span class="video-topbar-title">LULCkit v0.3.1 — Guided Video Tour</span>
             <span class="video-spec-pill">HD 720p · Audio + Captions</span>
           </div>
           <div class="video-player-box" id="videoPlayerBox">
