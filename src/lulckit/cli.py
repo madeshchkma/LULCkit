@@ -455,17 +455,19 @@ def bands_cmd(
         b_table = Table(title=f"Bands in {profile.file_name} ({profile.band_count} total)")
         for col in ("#", "Dtype", "Interp", "Role", "Description", "Min", "Max", "p2..p98", "Valid%"):
             b_table.add_column(col, justify="right" if col in ("#", "Min", "Max", "Valid%") else "left")
+        def _fmt(v: Any) -> str:
+            return f"{v:.3f}" if isinstance(v, float) else (str(v) if v is not None else "-")
+
         for b in profile.bands:
-            fmt = lambda v: f"{v:.3f}" if isinstance(v, float) else (str(v) if v is not None else "-")
-            p_rng = f"{fmt(b.p2)} .. {fmt(b.p98)}" if b.p2 is not None and b.p98 is not None else "-"
+            p_rng = f"{_fmt(b.p2)} .. {_fmt(b.p98)}" if b.p2 is not None and b.p98 is not None else "-"
             b_table.add_row(
                 str(b.index),
                 b.dtype,
                 b.colorinterp,
                 role_by_band.get(b.index, "-"),
                 b.description or "-",
-                fmt(b.min),
-                fmt(b.max),
+                _fmt(b.min),
+                _fmt(b.max),
                 p_rng,
                 f"{b.valid_ratio * 100:.1f}%",
             )
@@ -835,7 +837,7 @@ def batch_cmd(
             results.append(
                 {
                     "file": tif.name,
-                    "status": f"[red]error[/red]",
+                    "status": "[red]error[/red]",
                     "model": "-",
                     "dominant": str(exc)[:40],
                     "area": "-",

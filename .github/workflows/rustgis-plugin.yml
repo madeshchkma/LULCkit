@@ -55,7 +55,8 @@ jobs:
           export RUSTGIS_PLUGINS_DIR="$PLUGINS_DIR"
           PKG=$(ls out/lulckit-*.rgplugin)
           "$RUSTGIS_CLI" plugins install "$PKG"
-          "$RUSTGIS_CLI" run --sample --cmd 'info.commands' | grep -q 'plugin:lulckit/export-bands'
+          "$RUSTGIS_CLI" run --sample --cmd 'info.commands' | grep -q 'plugin:lulckit/load-output-raster'
+          "$RUSTGIS_CLI" run --sample --cmd 'gp.tools' | grep -q 'plugin:lulckit/export-bands'
           "$RUSTGIS_CLI" run --sample --cmd 'plugin:lulckit/models-info'
           "$RUSTGIS_CLI" run --sample --cmd 'plugin:lulckit/about'
           "$RUSTGIS_CLI" run --sample --cmd 'plugin:lulckit/load-output-raster'
